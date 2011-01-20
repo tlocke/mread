@@ -104,7 +104,9 @@ class MeterView(MonadHandler):
             kwh = inv.get_float("kwh")
             read = Read(meter=meter, read_date=read_date, kwh=kwh)
             read.put()
-            return inv.send_ok(self.page_fields(inv))
+            fields = self.page_fields(inv)
+            fields['message'] = 'Read added successfully.'
+            return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(inv)
             raise e
