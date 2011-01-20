@@ -93,7 +93,7 @@ class MeterView(MonadHandler):
 
     def http_post(self, inv):
         try:
-            editor = Editor.getEditor()
+            editor = Editor.get_editor()
             if editor is None:
                 raise UnauthorizedException()
             meter_key = inv.get_string("meter-key")
