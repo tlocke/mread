@@ -1,0 +1,37 @@
+{% extends "../base.html" %} {% block head %}
+<link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
+{% endblock %} {% block nav %}Meteread{% endblock %} {% block content%}
+<p>Welcome to Meteread, a website for storing the electricity meter
+readings for your property.</p>
+
+<!--
+<ul>
+	<li><a href="/users">Users</a> {% if user %} | <a
+		href="/users/{{ editor.pid }}">{{ user.nickname }}</a>{% endif %}</li>
+	<li><a href="/meters">Meters</a> | <a href="/meter?meter-key={{ meter.key }}">Your Meter</a></li>
+</ul>
+<br />
+-->
+<p>
+{% if user %} <a href="/meter?meter-key={{ meter.key }}">Your Meter</a>
+{% endif %}
+</p>
+
+<!--
+<table>
+	<caption>Recently Updated Meters</caption>
+	<thead>
+		<tr>
+			<th>Title</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for meter in meters %}
+		<tr>
+			<td><a href="/meters/{{meter.pid}}/">{{ meter.title}}</a></td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
+-->
+{% endblock %}

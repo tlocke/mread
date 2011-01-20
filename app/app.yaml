@@ -1,8 +1,8 @@
-application: sample-app
+application: meteread
 version: 1
 runtime: python
 api_version: 1
 
 handlers:
 - url: /.*
-  script: helloworld.py
+  script: mread.py
