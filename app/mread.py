@@ -59,7 +59,6 @@ class MRead(Monad, MonadHandler):
                 meter = Meter(editor=editor)
                 meter.put()
             fields['editor'] = editor
-            fields['logout_url'] = users.create_logout_url('/')
             fields['meter'] = Meter.gql("where editor = :1", editor).get()
         return fields
 

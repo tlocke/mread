@@ -73,6 +73,7 @@ class Invocation():
         user = users.get_current_user()
         if user is not None:
             values['user'] = user
+            values['logout_url'] = users.create_logout_url('/')
         self.start_response(response, self.header_list)
         if self.path_info == '/':
             template_name = "root." + type
