@@ -151,11 +151,10 @@ class ReadView(MonadHandler):
             meter = read.meter
             if editor.key() != meter.editor.key():
                 raise ForbiddenException()
+            
             if inv.has_control("delete"):
                 read.delete()
-                fields = self.page_fields(inv)
-                fields['message'] = 'Read deleted successfully.'
-                return inv.send_ok(fields)
+                return inv.send_see_other("/meter?meter-key=" + str(meter.key()))
             else:
                 read_date = inv.get_datetime("read")
                 kwh = inv.get_float("kwh")

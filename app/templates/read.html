@@ -2,7 +2,7 @@
 <a href="/">MtrHub</a>
 &gt; <a href="/meter?meter-key={{ read.meter.key }}">Meter {{ read.meter.key }}</a> &gt; Read {{ read.key }}{% endblock %} {% block content %} 
 {% ifequal read.meter.editor.key editor.key %}
-<form action="meter" method="post">
+<form action="read" method="post">
 <fieldset><legend>Update Read</legend> <input type="hidden"
 	name="read-key" value="{{ read.key }}"> <input size="4"
 	maxlength="4" name="read-year" value="{{ read.read_date.year }}">-<select
@@ -27,6 +27,12 @@
 <label>Reading <input name="kwh" value="{{ read.kwh }}"> kWh</label> <br>
 <br>
 <input type="submit" value="Update"></fieldset>
+</form>
+<br>
+<form action="read" method="post">
+<fieldset><legend>Delete This Read</legend> <input type="hidden"
+	name="read-key" value="{{ read.key }}">
+<input name="delete" type="submit" value="Delete"></fieldset>
 </form>
 {% endifequal %}
 <br>
