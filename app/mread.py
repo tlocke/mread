@@ -40,10 +40,21 @@ class Read(db.Model, MonadHandler):
     meter = db.ReferenceProperty(Meter)
     kwh = db.FloatProperty(required=True)
 
-  
+    @staticmethod
+    def get_read(key):
+        read = Read.get(key)
+        if read is None:
+            raise NotFoundException()
+        return read
+    
+    def update(self, read_date, kwh):
+        self.read_date = read_date
+        self.kwh = kwh
+        self.put()
+    
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView()})
+        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView()})
 
     def page_fields(self, inv):
         meters = Meter.gql("where tags = 'public'").fetch(30)
@@ -124,6 +135,48 @@ class MeterView(MonadHandler):
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
         return {'editor': Editor.get_editor(), 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+
+
+class ReadView(MonadHandler):
+    def http_get(self, inv):
+        return inv.send_ok(self.page_fields(inv))
+
+    def http_post(self, inv):
+        try:
+            editor = Editor.get_editor()
+            if editor is None:
+                raise UnauthorizedException()
+            read_key = inv.get_string("read-key")
+            read = Read.get_read(read_key)
+            meter = read.meter
+            if editor.key() != meter.editor.key():
+                raise ForbiddenException()
+            if inv.has_control("delete"):
+                read.delete()
+                fields = self.page_fields(inv)
+                fields['message'] = 'Read deleted successfully.'
+                return inv.send_ok(fields)
+            else:
+                read_date = inv.get_datetime("read")
+                kwh = inv.get_float("kwh")
+                read.update(read_date, kwh)
+                fields = self.page_fields(inv)
+                fields['message'] = 'Read edited successfully.'
+                return inv.send_ok(fields)
+        except UserException, e:
+            e.values = self.page_fields(inv)
+            raise e
+
+    def page_fields(self, inv):
+        read_key = inv.get_string("read-key")
+        read = Read.get_read(read_key)
+        
+        days = [{'display': '0'[len(str(day)) - 1:] + str(day), 'number': day} for day in range(1,32)]        
+        months = [{'display': '0'[len(str(month)) - 1:] + str(month), 'number': month} for month in range(1,13)]
+        hours = [{'display': '0'[len(str(hour)) - 1:] + str(hour), 'number': hour} for hour in range(24)]
+        minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute), 'number': minute} for minute in range(60)]
+
+        return {'editor': Editor.get_editor(), 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
     
     
 class MetersView(MonadHandler):

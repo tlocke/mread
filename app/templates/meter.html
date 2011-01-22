@@ -33,11 +33,13 @@
 <table>
 	<caption>Reads</caption>
 	<tr>
+		<th>View</th>
 		<th>Date</th>
 		<th>kWh</th>
 	</tr>
 	{% for read in reads %}
 	<tr>
+		<td><a href="/read?read-key={{ read.key }}">View</a></td>
 		<td>{{ read.read_date }}</td>
 		<td>{{ read.kwh }}</td>
 	</tr>

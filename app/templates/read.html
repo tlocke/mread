@@ -1,0 +1,34 @@
+{% extends "../base.html" %} {% block nav %}
+<a href="/">MtrHub</a>
+&gt; <a href="/meter?meter-key={{ read.meter.key }}">Meter {{ read.meter.key }}</a> &gt; Read {{ read.key }}{% endblock %} {% block content %} 
+{% ifequal read.meter.editor.key editor.key %}
+<form action="meter" method="post">
+<fieldset><legend>Update Read</legend> <input type="hidden"
+	name="read-key" value="{{ read.key }}"> <input size="4"
+	maxlength="4" name="read-year" value="{{ read.read_date.year }}">-<select
+	name="read-month">
+	{% for month in months %}
+	<option value="{{ month.display }}" {% ifequal month.number read.read_date.month %}selected="selected"{% endifequal %}>{{ month.display }}</option>
+	{% endfor %}
+</select>-<select name="read-day">
+	{% for day in days %}
+	<option value="{{ day.display }}" {% ifequal day.number read.read_date.day %}selected="selected"{% endifequal %}>{{ day.display }}</option>
+	{% endfor %}
+</select> <select name="read-hour">
+	{% for hour in hours %}
+	<option value="{{ hour.display }}" {% ifequal hour.number read.read_date.hour %}selected="selected"{% endifequal %}>{{ hour.display }}</option>
+	{% endfor %}
+</select>:<select name="read-minute">
+	{% for minute in minutes %}
+	<option value="{{ minute.display }}" {% ifequal minute.number read.read_date.minute %}selected="selected"{% endifequal %}>{{ minute.display }}</option>
+	{% endfor %}
+</select> <br>
+<br>
+<label>Reading <input name="kwh" value="{{ read.kwh }}"> kWh</label> <br>
+<br>
+<input type="submit" value="Update"></fieldset>
+</form>
+{% endifequal %}
+<br>
+
+{% endblock %}
