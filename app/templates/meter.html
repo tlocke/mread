@@ -22,7 +22,8 @@
 	{% for minute in minutes %}
 	<option value="{{ minute }}" {% ifequal minute now.minute %}selected="selected"{% endifequal %}>{{ minute }}</option>
 	{% endfor %}
-</select> <input name="kwh"> kWh <input type="submit" value="Insert"></fieldset>
+</select><br><br>
+<label><input name="kwh"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
 {% endifequal %}
 <br>
