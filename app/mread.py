@@ -4,6 +4,7 @@ from monad import Monad, NotFoundException, MonadHandler, UserException, Unautho
 from google.appengine.ext import db
 import sys
 import datetime
+import csv
 
 
 class Editor(db.Model):
@@ -54,7 +55,7 @@ class Read(db.Model, MonadHandler):
     
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView()})
+        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView()})
 
     def page_fields(self, inv):
         meters = Meter.gql("where tags = 'public'").fetch(30)
@@ -135,6 +136,52 @@ class MeterView(MonadHandler):
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
         return {'editor': Editor.get_editor(), 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+
+
+class UploadView(MonadHandler):
+    def http_get(self, inv):
+        editor = Editor.get_editor()
+        if editor is None:
+            raise UnauthorizedException()
+        return inv.send_ok(self.page_fields(inv))
+
+    def http_post(self, inv):
+        try:
+            editor = Editor.get_editor()
+            if editor is None:
+                raise UnauthorizedException()
+            meter_key = inv.get_string("meter-key")
+            meter = Meter.get_meter(meter_key)
+            if editor.key() != meter.editor.key():
+                raise ForbiddenException()
+
+            file_item = inv.get_file("spreadsheet")
+            if file_item.filename.endswith(".csv"):
+                reader = csv.reader(file_item.file)
+                for row in reader:
+                    if len(row) < 2:
+                        raise UserException("Expecting 2 fields per row, the date in the format YYYY-MM-DDTHH:MM followed by the reading.")
+                    try:
+                        read_date = datetime.datetime.strptime(row[0].strip(), '%Y-%m-%dT%H:%M')
+                    except ValueError, e:
+                        raise UserException("Problem at line number " + str(reader.line_num) + " of the file. The first field (the read date field) isn't formatted correctly. " + str(e))
+                    kwh = float(row[1].strip())
+                    read = Read(meter=meter, read_date=read_date, kwh=kwh)
+                    read.put()
+                fields = self.page_fields(inv)
+                fields['message'] = 'File imported successfully.'
+                return inv.send_ok(fields)
+            else:
+                raise UserException("The file name must end with '.csv.'")
+        except UserException, e:
+            e.values = self.page_fields(inv)
+            raise e
+
+    def page_fields(self, inv):
+        meter_key = inv.get_string("meter-key")
+        meter = Meter.get_meter(meter_key)
+
+        return {'editor': Editor.get_editor(), 'meter': meter}
 
 
 class ReadView(MonadHandler):

@@ -7,6 +7,7 @@ from wsgiref.headers import Headers
 import urlparse
 import datetime
 
+
 class HttpException(Exception):
     def __init__(self, message=None):
         self.values = {}
@@ -40,15 +41,25 @@ class ForbiddenException(HttpException):
 class Invocation():
     content_types = {'html': 'text/html', 'atom': 'application/xhtml+xml', 'xrds': 'application/xrds+xml'}
     
+    def _process_form(self, form):
+        for key in form.keys():
+            field = form[key]    
+            if field.type == 'multipart/form-data':
+                self._process_form(field)
+            elif field.filename:
+                self.files[key] = field
+            else:
+                self.controls[key] = unicode(field.value, 'utf_8')
+
+    
     def __init__(self, environ, start_response, template_dir):
         self.path_info = environ['PATH_INFO']
         self.template_dir = template_dir
         self.environ = environ
         self.start_response = start_response
         self.controls = {}
-        fields = cgi.FieldStorage()
-        for key in fields.keys():
-            self.controls[key] = unicode(fields[key].value, 'utf_8')
+        self.files = {}
+        self._process_form(cgi.FieldStorage())
         self.header_list = []
         self.headers = Headers(self.header_list)
 
@@ -127,12 +138,21 @@ class Invocation():
     
     def has_control(self, name):
         return self.controls.has_key(name)
+      
         
     def get_string(self, name):
         if self.has_control(name):
             return self.controls[name]
         else:
             raise UserException("The field '" + name + "' is needed.")
+    
+    
+    def get_file(self, name):
+        if name in self.files:
+            return self.files[name]
+        else:
+            raise UserException("The file field '" + name + "' is needed.")
+    
     
     def get_datetime(self, name):
         return datetime.datetime(*[self.get_integer(name + "-" + suffix) for suffix in ['year', 'month', 'day', 'hour', 'minute']])
