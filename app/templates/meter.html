@@ -4,31 +4,32 @@
 {% ifequal meter.editor.key editor.key %}
 <form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
-	name="meter-key" value="{{ meter.key }}"> <input size="4"
-	maxlength="4" name="read-year" value="{{ now.year }}">-<select
-	name="read-month">
+	name="meter_key" value="{{ meter.key }}"> <input size="4"
+	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ now.year }}{% endif %}">-<select
+	name="read_month">
 	{% for month in months %}
-	<option value="{{ month }}" {% ifequal month now.month %}selected="selected"{% endifequal %}>{{ month }}</option>
+	<option value="{{ month }}" {% if controls.read_month %}{% ifequal month controls.read_month %}selected="selected"{% endifequal %}{% else %}{% ifequal month now.month %}selected="selected"{% endifequal %}{% endif %}>{{ month }}</option>
 	{% endfor %}
-</select>-<select name="read-day">
+</select>-<select name="read_day">
 	{% for day in days %}
 	<option value="{{ day }}" {% ifequal day now.day %}selected="selected"{% endifequal %}>{{ day }}</option>
 	{% endfor %}
-</select> <select name="read-hour">
+</select> <select name="read_hour">
 	{% for hour in hours %}
 	<option value="{{ hour }}" {% ifequal hour now.hour %}selected="selected"{% endifequal %}>{{ hour }}</option>
 	{% endfor %}
-</select>:<select name="read-minute">
+</select>:<select name="read_minute">
 	{% for minute in minutes %}
 	<option value="{{ minute }}" {% ifequal minute now.minute %}selected="selected"{% endifequal %}>{{ minute }}</option>
 	{% endfor %}
 </select><br><br>
-<label><input name="kwh"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
+<label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
 {% endifequal %}
 <br>
 <ul>
-<li><a href="upload?meter-key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
+<li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
+<li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
 </ul>
 <table>
 	<caption>Reads</caption>
@@ -39,7 +40,7 @@
 	</tr>
 	{% for read in reads %}
 	<tr>
-		<td><a href="/read?read-key={{ read.key }}">View</a></td>
+		<td><a href="/read?read_key={{ read.key }}">View</a></td>
 		<td>{{ read.read_date }}</td>
 		<td>{{ read.kwh }}</td>
 	</tr>

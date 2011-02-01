@@ -20,4 +20,9 @@ indexes:
   properties:
   - name: meter
   - name: read_date
+
+- kind: Read
+  properties:
+  - name: meter
+  - name: read_date
     direction: desc

@@ -1,0 +1,6 @@
+{% extends "../base.html" %} {% block nav %}
+<a href="/">MtrHub</a>
+&gt; <a href="/meter?meter_key={{ meter.key }}">Meter {{ meter.key }}</a> &gt; Chart{% endblock %} {% block content %} 
+
+<img src="https://chart.googleapis.com/chart?cht=bvs&amp;chd=t:{{ data }}&amp;chs=1000x250&amp;chxr=0,0,{{ max_data }}|3,0,{{ max_data }}&amp;chxt=y,y,x,r,r&amp;chds=0,{{ max_data }}&amp;chxl=1:|kWh|2:|{{ labels }}|4:|kWh&amp;chbh=a&amp;chxp=1,50|4,50">
+{% endblock %}

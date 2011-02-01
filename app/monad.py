@@ -155,8 +155,10 @@ class Invocation():
     
     
     def get_datetime(self, name):
-        return datetime.datetime(*[self.get_integer(name + "-" + suffix) for suffix in ['year', 'month', 'day', 'hour', 'minute']])
-    
+        try:
+            return datetime.datetime(*[self.get_integer(name + "_" + suffix) for suffix in ['year', 'month', 'day', 'hour', 'minute']])
+        except ValueError, e:
+            raise UserException(str(e))
     
     def get_integer(self, name):
         return int(self.get_string(name))

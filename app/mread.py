@@ -5,6 +5,7 @@ from google.appengine.ext import db
 import sys
 import datetime
 import csv
+import dateutil.relativedelta
 
 
 class Editor(db.Model):
@@ -55,7 +56,7 @@ class Read(db.Model, MonadHandler):
     
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView()})
+        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView()})
 
     def page_fields(self, inv):
         meters = Meter.gql("where tags = 'public'").fetch(30)
@@ -107,7 +108,7 @@ class MeterView(MonadHandler):
             editor = Editor.get_editor()
             if editor is None:
                 raise UnauthorizedException()
-            meter_key = inv.get_string("meter-key")
+            meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
             if editor.key() != meter.editor.key():
                 raise ForbiddenException()
@@ -123,7 +124,7 @@ class MeterView(MonadHandler):
             raise e
 
     def page_fields(self, inv):
-        meter_key = inv.get_string("meter-key")
+        meter_key = inv.get_string("meter_key")
         meter = Meter.get_meter(meter_key)
 
         reads = Read.gql("where meter = :1 order by read_date desc", meter).fetch(30)
@@ -150,7 +151,7 @@ class UploadView(MonadHandler):
             editor = Editor.get_editor()
             if editor is None:
                 raise UnauthorizedException()
-            meter_key = inv.get_string("meter-key")
+            meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
             if editor.key() != meter.editor.key():
                 raise ForbiddenException()
@@ -164,7 +165,7 @@ class UploadView(MonadHandler):
                     try:
                         read_date = datetime.datetime.strptime(row[0].strip(), '%Y-%m-%dT%H:%M')
                     except ValueError, e:
-                        raise UserException("Problem at line number " + str(reader.line_num) + " of the file. The first field (the read date field) isn't formatted correctly. " + str(e))
+                        raise UserException("Problem at line number " + str(reader.line_num) + " of the file. The first field (the read date field) isn't formatted correctly, it should be of the form 2010-02-23T21:46. " + str(e))
                     kwh = float(row[1].strip())
                     read = Read(meter=meter, read_date=read_date, kwh=kwh)
                     read.put()
@@ -178,10 +179,55 @@ class UploadView(MonadHandler):
             raise e
 
     def page_fields(self, inv):
-        meter_key = inv.get_string("meter-key")
+        meter_key = inv.get_string("meter_key")
         meter = Meter.get_meter(meter_key)
 
         return {'editor': Editor.get_editor(), 'meter': meter}
+
+
+class ChartView(MonadHandler):
+    def http_get(self, inv):
+        return inv.send_ok(self.page_fields(inv))
+    
+    def kwh(self, meter, start_date, finish_date):
+        sum_kwh = 0
+        code = 'complete-data'
+        first_read = Read.gql("where meter = :1 and read_date <= :2 order by read_date desc", meter, start_date).get()
+        if first_read is None:
+            code = 'partial-data'
+        last_read = Read.gql("where meter = :1 and read_date >= :2 order by read_date", meter, finish_date).get()
+        if last_read is None:
+            code = 'partial-data'
+            q_finish = finish_date
+        else:
+            q_finish = last_read.read_date
+        for read in Read.gql("where meter = :1 and read_date > :2 and read_date <= :3 order by read_date", meter, start_date, q_finish):
+            if first_read is not None:
+                rate = (read.kwh - first_read.kwh) / self.total_seconds(read.read_date - first_read.read_date)
+                sum_kwh += rate * max(self.total_seconds(min(read.read_date, finish_date) - max(first_read.read_date, start_date)), 0)
+            first_read = read
+        return {'kwh': sum_kwh, 'code': code, 'start_date': start_date, 'finish_date': finish_date}
+
+
+    def total_seconds(self, td):
+        return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
+
+    def page_fields(self, inv):
+        meter_key = inv.get_string("meter_key")
+        meter = Meter.get_meter(meter_key)
+        now = datetime.datetime.now().date()
+        now = datetime.datetime(now.year, now.month, 1)
+        months = []
+        for month in range(-11, 1):
+            month_start = now + dateutil.relativedelta.relativedelta(months=month)
+            month_finish = month_start + dateutil.relativedelta.relativedelta(months=1)
+            #sys.stderr.write("month start " + str(month_start) + " month finish " + str(month_finish))
+            months.append(self.kwh(meter, month_start, month_finish))
+        
+        chd = [month['kwh'] for month in months]
+        labels = [datetime.datetime.strftime(month['start_date'], '%b %Y') for month in months]
+        return {'editor': Editor.get_editor(), 'meter': meter, 'months': months, 'data': ','.join(str(datum) for datum in chd), 'max_data': str(max(chd)), 'labels': '|'.join(labels)}
 
 
 class ReadView(MonadHandler):
@@ -193,7 +239,7 @@ class ReadView(MonadHandler):
             editor = Editor.get_editor()
             if editor is None:
                 raise UnauthorizedException()
-            read_key = inv.get_string("read-key")
+            read_key = inv.get_string("read_key")
             read = Read.get_read(read_key)
             meter = read.meter
             if editor.key() != meter.editor.key():
@@ -201,7 +247,7 @@ class ReadView(MonadHandler):
             
             if inv.has_control("delete"):
                 read.delete()
-                return inv.send_see_other("/meter?meter-key=" + str(meter.key()))
+                return inv.send_see_other("/meter?meter_key=" + str(meter.key()))
             else:
                 read_date = inv.get_datetime("read")
                 kwh = inv.get_float("kwh")
@@ -214,7 +260,7 @@ class ReadView(MonadHandler):
             raise e
 
     def page_fields(self, inv):
-        read_key = inv.get_string("read-key")
+        read_key = inv.get_string("read_key")
         read = Read.get_read(read_key)
         
         days = [{'display': '0'[len(str(day)) - 1:] + str(day), 'number': day} for day in range(1,32)]        
