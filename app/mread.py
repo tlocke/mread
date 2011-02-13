@@ -161,9 +161,9 @@ class UploadView(MonadHandler):
                 reader = csv.reader(file_item.file)
                 for row in reader:
                     if len(row) < 2:
-                        raise UserException("Expecting 2 fields per row, the date in the format YYYY-MM-DDTHH:MM followed by the reading.")
+                        raise UserException("Expecting 2 fields per row, the date in the format yyyy-MM-dd HH:mm followed by the reading.")
                     try:
-                        read_date = datetime.datetime.strptime(row[0].strip(), '%Y-%m-%dT%H:%M')
+                        read_date = datetime.datetime.strptime(row[0].strip(), '%Y-%m-%d %H:%M')
                     except ValueError, e:
                         raise UserException("Problem at line number " + str(reader.line_num) + " of the file. The first field (the read date field) isn't formatted correctly, it should be of the form 2010-02-23T21:46. " + str(e))
                     kwh = float(row[1].strip())

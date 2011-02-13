@@ -3,8 +3,18 @@
 &gt; <a href="/meter?meter-key={{ meter.key }}">Meter {{ meter.key }}</a> &gt; Bulk Upload{% endblock %} {% block content %} 
 
 <form action="upload" method="post" enctype="multipart/form-data">
-<fieldset><legend>Upload CSV Spreadsheet Of Reads</legend> <input type="hidden"
-	name="meter-key" value="{{ meter.key }}"> <input
-	name="spreadsheet" type="file"> <input type="submit" value="Upload"></fieldset>
+<fieldset><legend>Upload CSV Spreadsheet Of Reads</legend>
+<p>Example:</p>
+<pre>
+2010-02-03 00:00, 14311
+2010-08-10 00:00, 17555
+2010-09-23 20:24, 17835
+2010-09-24 22:20, 17842
+2010-09-26 13:25, 17849
+</pre>
+<br/>
+<input type="hidden" name="meter_key" value="{{ meter.key }}">
+<input name="spreadsheet" type="file"> <input type="submit" value="Upload">
+</fieldset>
 </form>
 {% endblock %}
