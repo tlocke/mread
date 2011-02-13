@@ -65,4 +65,10 @@
 			<response-code value="303" />
 		</request>
 	</test>
+	<test name="Have a look at the upload page.">
+		<request path="/upload?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+			<regex pattern='"/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"'/>
+			<response-code value="200" />
+		</request>
+	</test>
 </imprimatur>

@@ -1,6 +1,6 @@
 {% extends "../base.html" %} {% block nav %}
 <a href="/">MtrHub</a>
-&gt; <a href="/meter?meter-key={{ meter.key }}">Meter {{ meter.key }}</a> &gt; Bulk Upload{% endblock %} {% block content %} 
+&gt; <a href="/meter?meter_key={{ meter.key }}">Meter {{ meter.key }}</a> &gt; Bulk Upload{% endblock %} {% block content %} 
 
 <form action="upload" method="post" enctype="multipart/form-data">
 <fieldset><legend>Upload CSV Spreadsheet Of Reads</legend>
