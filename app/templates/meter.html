@@ -2,7 +2,8 @@
 <a href="/">MtrHub</a>
 &gt; Meter {{ meter.key }}{% endblock %} {% block content %} 
 {% ifequal meter.editor.key editor.key %}
-<form action="meter" method="post">
+<ul>
+<li><form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
 	name="meter_key" value="{{ meter.key }}"> <input size="4"
 	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ now.year }}{% endif %}">-<select
@@ -26,10 +27,22 @@
 <label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
 {% endifequal %}
-<br>
-<ul>
+</li>
 <li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
+<li><form action="meter" method="post">
+<fieldset>
+<legend>Remind me to take a reading</legend>
+<input type="hidden" name="meter_key" value="{{ meter.key }}">
+<label>Email Address <input name="email_address" value="{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}"></label>
+<select name="reminder_frequency">
+<option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
+<option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
+</select>
+<input type="submit" name="reminder" value="Update">
+</fieldset>
+</form></li>
+{% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
 </ul>
 <table>
 	<capltion>Reads</caption>

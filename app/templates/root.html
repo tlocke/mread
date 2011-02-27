@@ -1,8 +1,6 @@
 {% extends "../base.html" %} {% block head %}
 <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" />
 {% endblock %} {% block nav %}MtrHub{% endblock %} {% block content%}
-<p>Welcome to MtrHub, a website for storing the electricity meter
-readings for your property.</p>
 
 <!--
 <ul>
@@ -12,8 +10,12 @@ readings for your property.</p>
 </ul>
 <br />
 -->
+
+{% if user %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
+{% else %}
 <p>
-{% if user %} <a href="/meter?meter_key={{ meter.key }}">Your Meter</a>
+Welcome to MtrHub, a website for storing the electricity meter
+readings for your property.
 {% endif %}
 </p>
 

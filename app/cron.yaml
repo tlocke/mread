@@ -1,0 +1,4 @@
+cron:
+- description: email reminder
+  url: /cron/reminders
+  schedule: every 24 hours

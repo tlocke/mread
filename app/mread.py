@@ -28,6 +28,9 @@ class EditorView(MonadHandler):
 class Meter(db.Model):
     tags = db.StringListProperty()
     editor = db.ReferenceProperty(Editor)
+    email_address = db.EmailProperty()
+    reminder_frequency = db.StringProperty()
+    last_reminder = db.DateTimeProperty()
     
     @staticmethod
     def get_meter(key):
@@ -35,8 +38,12 @@ class Meter(db.Model):
         if meter is None:
             raise NotFoundException()
         return meter
-
-
+    
+    def set_reminder(self, email_address, reminder_frequency):
+        self.email_address = email_address
+        self.reminder_frequency = reminder_frequency
+        
+    
 class Read(db.Model, MonadHandler):
     read_date = db.DateTimeProperty(required=True)
     meter = db.ReferenceProperty(Meter)
@@ -77,10 +84,6 @@ class MRead(Monad, MonadHandler):
 
     def http_get(self, inv):
         return inv.send_ok(self.page_fields(inv))
-    
-    def http_post(self, inv):
-        inv.log_out()
-        return inv.send_ok(self.page_fields(inv))
 
 
 class LogIn(MonadHandler):
@@ -112,13 +115,22 @@ class MeterView(MonadHandler):
             meter = Meter.get_meter(meter_key)
             if editor.key() != meter.editor.key():
                 raise ForbiddenException()
-            read_date = inv.get_datetime("read")
-            kwh = inv.get_float("kwh")
-            read = Read(meter=meter, read_date=read_date, kwh=kwh)
-            read.put()
-            fields = self.page_fields(inv)
-            fields['message'] = 'Read added successfully.'
-            return inv.send_ok(fields)
+            if inv.has_control('reminder'):
+                email_address = inv.get_string('email_address')
+                frequency = inv.get_string('reminder_frequency')
+                meter.set_reminder(email_address, frequency)
+                meter.put()
+                fields = self.page_fields(inv)
+                fields['message'] = 'Reminder set successfully.'
+                return inv.send_ok(fields)
+            else:
+                read_date = inv.get_datetime("read")
+                kwh = inv.get_float("kwh")
+                read = Read(meter=meter, read_date=read_date, kwh=kwh)
+                read.put()
+                fields = self.page_fields(inv)
+                fields['message'] = 'Read added successfully.'
+                return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(inv)
             raise e
@@ -292,9 +304,10 @@ class Editors(MonadHandler):
             raise NotFoundException()
         return editor
 
+app = MRead()
 
 def main():
-    run_wsgi_app(MRead())
+    run_wsgi_app(app)
 
 if __name__ == "__main__":
     main()
