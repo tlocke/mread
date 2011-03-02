@@ -1,8 +1,17 @@
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'django-settings'
+
+from google.appengine.dist import use_library
+use_library('django', '1.2')
+from django.conf import settings
+try:
+    settings.configure(INSTALLED_APPS=('nothing',))
+except:
+    pass 
 from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, NotFoundException, MonadHandler, UserException, UnauthorizedException, ForbiddenException
 from google.appengine.ext import db
-import sys
 import datetime
 import csv
 import dateutil.relativedelta
@@ -97,7 +106,6 @@ class LogIn(MonadHandler):
             providers = []
             fields['providers'] = providers
             for url, name in {'google.com/accounts/o8/id': 'Google', 'yahoo.com': 'Yahoo', 'myspace.com': 'MySpace', 'aol.com': 'AOL', 'myopenid.com': 'MyOpenID'}.iteritems():
-                sys.stderr.write("the url is " + url + "The name is " + name)
                 providers.append({'name': name, 'url': users.create_login_url(dest_url="/", federated_identity=url)})
         return fields
     

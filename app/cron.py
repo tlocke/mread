@@ -1,3 +1,13 @@
+import os
+os.environ['DJANGO_SETTINGS_MODULE'] = 'django-settings'
+
+from google.appengine.dist import use_library
+use_library('django', '1.2')
+from django.conf import settings
+try:
+    settings.configure(INSTALLED_APPS=('nothing',))
+except:
+    pass 
 from google.appengine.api import mail
 from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, MonadHandler
@@ -19,7 +29,7 @@ class Cron(Monad, MonadHandler):
 
 class Reminders(MonadHandler):
     def http_get(self, inv):
-        msg = mail.EmailMessage(sender="MtrHub Support <support@mtrhub.com>",
+        msg = mail.EmailMessage(sender="MtrHub Support <tlocke@tlocke.org.uk>",
                                 subject="MtrHub: Remember to take a meter reading.",
                                 body="""
 Hi,

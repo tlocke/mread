@@ -2,7 +2,7 @@
 <!DOCTYPE imprimatur PUBLIC 
     "-//Imprimatur DTD 008//EN"
     "http://imprimatur.sourceforge.net/imprimatur-008.dtd">
-<imprimatur port="@@test.port@@" hostname="localhost">
+<imprimatur port="8080" hostname="localhost">
 	<test name="Look at home page">
 		<request path="/">
 			<response-code value="200" />
@@ -15,7 +15,7 @@
 		</request>
 		<!-- Log in -->
 		<request
-			path="/_ah/login?email=test@example.com&amp;continue=http://localhost:@@test.port@@/&amp;action=Login"
+			path="/_ah/login?email=test@example.com&amp;continue=http://localhost:8080/&amp;action=Login"
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
@@ -83,7 +83,7 @@
 		
 		<!-- Log in as administrator -->
 		<request
-			path="/_ah/login?email=admin@example.com&amp;admin=True&amp;continue=http://localhost:@@test.port@@/&amp;action=Login"
+			path="/_ah/login?email=admin@example.com&amp;admin=True&amp;continue=http://localhost:8080/&amp;action=Login"
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
