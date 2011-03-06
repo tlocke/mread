@@ -93,5 +93,17 @@
 			path="/cron/reminders">
 			<response-code value="200" />
 		</request>
+		
+		<!-- And log out -->
+		<request
+			path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
+			follow-redirects="true">
+			<response-code value="200" />
+		</request>
+	</test>
+	<test name="Try and view the meter without being logged on">
+		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+			<response-code value="401" />
+		</request>
 	</test>
 </imprimatur>

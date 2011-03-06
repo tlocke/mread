@@ -1,8 +1,9 @@
 {% extends "base.html" %} {% block nav %}
 <a href="/">MtrHub</a>
 &gt; Meter {{ meter.key }}{% endblock %} {% block content %} 
-{% ifequal meter.editor.key editor.key %}
+
 <ul>
+{% ifequal meter.editor.key editor.key %}
 <li><form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
 	name="meter_key" value="{{ meter.key }}"> <input size="4"
@@ -26,11 +27,10 @@
 </select><br><br>
 <label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
-{% endifequal %}
 </li>
-<li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
-<li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
 <li><form action="meter" method="post">
+<fieldset>
+<legend>Settings</legend>
 <fieldset>
 <legend>Remind me to take a reading</legend>
 <input type="hidden" name="meter_key" value="{{ meter.key }}">
@@ -39,10 +39,20 @@
 <option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
 <option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
 </select>
-<input type="submit" name="reminder" value="Update">
+</fieldset>
+<br/>
+<fieldset>
+<legend>Sharing</legend>
+<label>Public <input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}></label>
+</fieldset>
+<br/>
+<input type="submit" name="settings" value="Update">
 </fieldset>
 </form></li>
 {% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
+<li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
+{% endifequal %}
+<li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
 </ul>
 <table>
 	<capltion>Reads</caption>

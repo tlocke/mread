@@ -118,14 +118,18 @@ class Invocation():
             url = self.home_url() + url
         self.headers.add_header('Location', url)
         self._send('303 See Other')
-    
-    def send_method_not_allowed(self):
-        self._send('405 Method Not Allowed')
-        return ['405 Method Not Allowed']
+
+    def send_unauthorized(self):
+        self._send('401 Unauthorized')
+        return ['401 Unauthorized']
 
     def send_forbidden(self):
         self._send('403 Forbidden')
         return ['403 Forbidden']
+
+    def send_method_not_allowed(self):
+        self._send('405 Method Not Allowed')
+        return ['405 Method Not Allowed']
     
     def send_user_exception(self, values):
         return self._send('418 User Exception', values)
@@ -145,7 +149,7 @@ class Invocation():
             return self.controls[name]
         else:
             raise UserException("The field '" + name + "' is needed.")
-    
+
     
     def get_file(self, name):
         if name in self.files:
@@ -203,3 +207,5 @@ class Monad(object):
             return inv.send_not_found(e.message)
         except ForbiddenException:
             return inv.send_forbidden()
+        except UnauthorizedException, e:
+            return inv.send_unauthorized()
