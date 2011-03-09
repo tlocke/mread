@@ -24,14 +24,14 @@
 <body>
 <p>{% block nav %}Polifesto{% endblock %}</p>
 {% block login %}
-<p>{% if user %}
+<p id="login">{% if user %}
 	<a href="{{ logout_url }}">Log Out</a>
 	{% else %} <a href="/log-in">Log In</a> {% endif %}</p>
 {% endblock %}
 {% if message %}
 <p>{{ message }}</p>
 {% endif %} {% block content %} {% endblock %}
-<ul>
+<ul id="footerlist">
 <li><a href="http://twitter.com/mtrhub">Twitter</a></li>
 <li><a href="http://blog.mtrhub.com/">Blog</a></li>
 <li><a href="http://groups.google.com/group/mtrhub">Forum</a></li>
