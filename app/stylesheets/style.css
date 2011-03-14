@@ -1,27 +1,43 @@
 body {
-	// position: absolute;
 }
-
-#footerlist
-{
-list-style: none;
-padding: 0;
-margin: 0;
-text-align: center;
-}
-
-#footerlist li
-{
-display: inline;
-padding: 0;
-margin: 0;
-}
-
-#footerlist li:before { content: "| "; }
-#footerlist li:first-child:before { content: ""; }
 
 #login {
-	position:absolute;
-	right: 1em;
-	top: 0em;
+	float:right;
+}
+
+#nav {
+	float:left;
+}
+
+#content {
+	float: left;
+	clear: both;
+}
+
+#footer {
+	float: left;
+	clear: both;
+	width: 100%;
+	margin-top: 2em;
+}
+
+#footer > ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	text-align: center;
+}
+
+#footer > ul > li {
+	display: inline;
+	padding: 0;
+	margin: 0;
+}
+
+#footer > ul > li:before {
+	content: "| ";
+}
+
+#footer > ul > li:first-child:before {
+	 content: "";
 }

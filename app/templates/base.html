@@ -22,7 +22,7 @@
 </script>
 </head>
 <body>
-<p>{% block nav %}Polifesto{% endblock %}</p>
+<p id="nav">{% block nav %}Polifesto{% endblock %}</p>
 {% block login %}
 <p id="login">{% if user %}
 	<a href="{{ logout_url }}">Log Out</a>
@@ -30,12 +30,14 @@
 {% endblock %}
 {% if message %}
 <p>{{ message }}</p>
-{% endif %} {% block content %} {% endblock %}
+{% endif %}<div id="content">{% block content %}{% endblock %}</div>
+<div id="footer">
 <ul id="footerlist">
 <li><a href="http://twitter.com/mtrhub">Twitter</a></li>
 <li><a href="http://blog.mtrhub.com/">Blog</a></li>
 <li><a href="http://groups.google.com/group/mtrhub">Forum</a></li>
 <li><a href="https://github.com/tlocke/mread">Software</a></li>
 </ul>
+</div>
 </body>
 </html>
