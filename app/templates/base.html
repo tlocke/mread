@@ -28,9 +28,9 @@
 	<a href="{{ logout_url }}">Log Out</a>
 	{% else %} <a href="/log-in">Log In</a> {% endif %}</p>
 {% endblock %}
-{% if message %}
-<p>{{ message }}</p>
-{% endif %}<div id="content">{% block content %}{% endblock %}</div>
+<div id="content">{% if message %}
+<p><em>{{ message }}</em></p>
+{% endif %}{% block content %}{% endblock %}</div>
 <div id="footer">
 <ul id="footerlist">
 <li><a href="http://twitter.com/mtrhub">Twitter</a></li>

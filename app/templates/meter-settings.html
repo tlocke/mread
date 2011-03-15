@@ -1,0 +1,29 @@
+{% extends "base.html" %} {% block nav %}
+<a href="/">MtrHub</a>
+&gt; <a href="meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Settings{% endblock %} {% block content %} 
+
+<form action="meter-settings" method="post">
+<fieldset>
+<legend>Settings</legend>
+<label>Meter Name <input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}"></label>
+<br/>
+<br/>
+<fieldset>
+<legend>Remind me to take a reading</legend>
+<input type="hidden" name="meter_key" value="{{ meter.key }}">
+<label>Email Address <input name="email_address" value="{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}"></label>
+<select name="reminder_frequency">
+<option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
+<option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
+</select>
+</fieldset>
+<br/>
+<fieldset>
+<legend>Sharing</legend>
+<label>Public <input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}></label>
+</fieldset>
+<br/>
+<input type="submit" value="Update">
+</fieldset>
+</form>
+{% endblock %}

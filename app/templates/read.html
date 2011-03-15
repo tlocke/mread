@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block nav %}
 <a href="/">MtrHub</a>
-&gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter {{ read.meter.key }}</a> &gt; Read {{ read.key }}{% endblock %} {% block content %} 
+&gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.key }}{% endblock %} {% block content %} 
 {% ifequal read.meter.editor.key editor.key %}
 <form action="read" method="post">
 <fieldset><legend>Update Read</legend> <input type="hidden"

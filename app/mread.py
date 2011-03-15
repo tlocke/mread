@@ -54,6 +54,7 @@ class Meter(db.Model):
     reminder_frequency = db.StringProperty()
     last_reminder = db.DateTimeProperty()
     is_public = db.BooleanProperty(default=False, required=True)
+    name = db.StringProperty(default='House', required=True)
     
     @staticmethod
     def get_meter(key):
@@ -87,7 +88,7 @@ class Read(db.Model, MonadHandler):
 
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView()})
+        Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings()})
 
     def page_fields(self, inv):
         meters = Meter.gql("where tags = 'public'").fetch(30)
@@ -179,6 +180,44 @@ class MeterView(MonadHandler):
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
         return {'editor': editor, 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+
+
+class MeterSettings(MonadHandler):
+    def http_get(self, inv):
+        meter_key = inv.get_string("meter_key")
+        meter = Meter.get_meter(meter_key)
+        editor = Editor.require_editor()            
+        if editor.key() != meter.editor.key():
+            raise ForbiddenException()
+        return inv.send_ok(self.page_fields(meter, editor))
+
+
+    def http_post(self, inv):
+        try:
+            editor = Editor.require_editor()
+            meter_key = inv.get_string("meter_key")
+            meter = Meter.get_meter(meter_key)
+            if editor.key() != meter.editor.key():
+                raise ForbiddenException()
+            
+            is_public = inv.has_control('is_public')
+            email_address = inv.get_string('email_address')
+            frequency = inv.get_string('reminder_frequency')
+            name = inv.get_string('name')
+
+            meter.set_reminder(email_address, frequency)
+            meter.is_public = is_public
+            meter.name = name
+            meter.put()
+            fields = self.page_fields(meter, editor)
+            fields['message'] = 'Settings updated successfully.'
+            return inv.send_ok(fields)
+        except UserException, e:
+            e.values = self.page_fields(meter, editor)
+            raise e
+
+    def page_fields(self, meter, editor):
+        return {'editor': editor, 'meter': meter}
 
 
 class UploadView(MonadHandler):
