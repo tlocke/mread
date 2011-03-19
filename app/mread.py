@@ -91,7 +91,7 @@ class MRead(Monad, MonadHandler):
         Monad.__init__(self, {'/': self, '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings()})
 
     def page_fields(self, inv):
-        meters = Meter.gql("where tags = 'public'").fetch(30)
+        meters = Meter.gql("where is_public = TRUE").fetch(30)
         fields = {'meters': meters}
         
         fields['realm'] = inv.home_url()

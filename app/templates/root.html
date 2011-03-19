@@ -9,4 +9,13 @@ Welcome to MtrHub. <a href="/log-in">Log in</a> to start storing electricity, ga
 readings for your property.
 {% endif %}
 </p>
+<table>
+	<caption>Public Meters</caption>
+	{% for meter in meters %}
+	<tr>
+		<td>{{ meter.editor.openid }}</td>
+		<td><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a></td>
+	</tr>
+	{% endfor %}
+</table>
 {% endblock %}
