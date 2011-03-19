@@ -2,9 +2,8 @@
 <a href="/">MtrHub</a>
 &gt; Meter: {{ meter.name }}{% endblock %} {% block content %} 
 
-<ul>
 {% ifequal meter.editor.key editor.key %}
-<li><form action="meter" method="post">
+<form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
 	name="meter_key" value="{{ meter.key }}"> <input size="4"
 	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ now.year }}{% endif %}">-<select
@@ -27,7 +26,9 @@
 </select><br><br>
 <label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
-</li>
+{% endifequal %}
+<ul>
+{% ifequal meter.editor.key editor.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
 {% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
@@ -35,7 +36,7 @@
 <li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
 </ul>
 <table>
-	<capltion>Reads</caption>
+	<caption>Reads</caption>
 	<tr>
 		<th>View</th>
 		<th>Date</th>
