@@ -1,6 +1,10 @@
-{% extends "base.html" %} {% block nav %}
-<a href="/">MtrHub</a>
-&gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.key }}{% endblock %} {% block content %} 
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Meter: {{ read.meter.name }} &gt; Read {{ read.read_date|date:"Y-m-d H:i" }}{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.read_date|date:"Y-m-d  H:i" }}{% endblock %}
+
+{% block content %} 
 {% ifequal read.meter.editor.key editor.key %}
 <form action="read" method="post">
 <fieldset><legend>Update Read</legend> <input type="hidden"

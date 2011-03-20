@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% block nav %}
-<a href="/">MtrHub</a>
-&gt; Meter: {{ meter.name }}{% endblock %} {% block content %} 
+{% extends "base.html" %}
 
+{% block title %}MtrHub &gt; Meter: {{ meter.name }}{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
+
+{% block content %} 
 {% ifequal meter.editor.key editor.key %}
 <form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
@@ -45,7 +48,7 @@
 	{% for read in reads %}
 	<tr>
 		<td><a href="/read?read_key={{ read.key }}">View</a></td>
-		<td>{{ read.read_date }}</td>
+		<td>{{ read.read_date|date:"Y-m-d H:i" }}</td>
 		<td>{{ read.kwh }}</td>
 	</tr>
 	{% endfor %}

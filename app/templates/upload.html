@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% block nav %}
-<a href="/">MtrHub</a>
-&gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Bulk Upload{% endblock %} {% block content %} 
+{% extends "base.html" %}
 
+{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Bulk Upload{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Bulk Upload{% endblock %}
+
+{% block content %}
 <form action="upload" method="post" enctype="multipart/form-data">
 <fieldset><legend>Upload <a href="http://en.wikipedia.org/wiki/Comma-separated_values">CSV</a> Spreadsheet Of Reads</legend>
 <p>Example:</p>

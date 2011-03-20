@@ -1,4 +1,6 @@
-{% extends "base.html" %} {% block nav %}
+{% extends "base.html" %}
+{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Chart{% endblock %}
+{% block nav %}
 <a href="/">MtrHub</a>
 &gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Chart{% endblock %} {% block content %} 
 

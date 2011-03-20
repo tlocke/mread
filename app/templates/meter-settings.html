@@ -1,7 +1,10 @@
-{% extends "base.html" %} {% block nav %}
-<a href="/">MtrHub</a>
-&gt; <a href="meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Settings{% endblock %} {% block content %} 
+{% extends "base.html" %}
 
+{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Settings{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; <a href="meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Settings{% endblock %}
+
+{% block content %} 
 <form action="meter-settings" method="post">
 <fieldset>
 <legend>Settings</legend>
