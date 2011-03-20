@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block nav %}MtrHub{% endblock %} {% block content%}
+{% extends "base.html" %}{% block title %}MtrHub{% endblock %}{% block nav %}MtrHub{% endblock %} {% block content%}
 
 {% if user %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
 {% else %}
