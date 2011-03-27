@@ -22,16 +22,24 @@ class Reader(db.Model):
     openids = db.StringListProperty(required=True)
     
     @staticmethod
-    def get_reader():
+    def get_current_reader():
         user = users.get_current_user()
         if user is None:
             return None
         else:
             return Reader.gql("where openids = :1", user.nickname()).get()
-        
+    
     @staticmethod
-    def require_reader():
-        reader = Reader.get_reader()
+    def get_reader(reader_key):
+        reader = Reader.get(reader_key)
+        if reader is None:
+            raise NotFoundException()
+        return reader
+    
+    
+    @staticmethod
+    def require_current_reader():
+        reader = Reader.get_current_reader()
         if reader is None:
             raise UnauthorizedException()
         return reader
@@ -47,14 +55,14 @@ class ReaderView(MonadHandler):
     def http_get(self, inv):
         reader_key = inv.get_string("reader_key")
         reader = Reader.get_reader(reader_key)
-        current_reader = Reader.require_reader()            
+        current_reader = Reader.require_current_reader()            
         if current_reader.key() != reader.key():
             raise ForbiddenException()
 
-        return inv.send_ok({'reader': reader })
+        return inv.send_ok({'reader': reader, 'current_reader': current_reader})
     
 
-class Meter(db.Expando):
+class Meter(db.Model):
     reader = db.ReferenceProperty(Reader)
     email_address = db.EmailProperty()
     reminder_frequency = db.StringProperty()
@@ -107,18 +115,18 @@ class MRead(Monad, MonadHandler):
         '''    
         
     def page_fields(self, inv):
-        fields = {'meters': Meter.gql("where is_public = TRUE").fetch(30), 'realm': inv.home_url()}
+        fields = {'meters': Meter.gql("where is_public = TRUE").fetch(30)}
         
         user = users.get_current_user()
         if user is not None:
-            reader = Reader.get_reader()
-            if reader is None:
-                reader = Reader(openids=[user.nickname()])
-                reader.put()
-                meter = Meter(reader=reader)
+            current_reader = Reader.get_current_reader()
+            if current_reader is None:
+                current_reader = Reader(openids=[user.nickname()])
+                current_reader.put()
+                meter = Meter(reader=current_reader)
                 meter.put()
-            fields['current_reader'] = reader
-            fields['meter'] = Meter.gql("where reader = :1", reader).get()
+            fields['current_reader'] = current_reader
+            fields['meter'] = Meter.gql("where reader = :1", current_reader).get()
         return fields
 
     def http_get(self, inv):
@@ -145,9 +153,9 @@ class MeterView(MonadHandler):
         meter_key = inv.get_string("meter_key")
         meter = Meter.get_meter(meter_key)
         if meter.is_public:
-            current_reader = Reader.get_reader()
+            current_reader = Reader.get_current_reader()
         else:
-            current_reader = Reader.require_reader()            
+            current_reader = Reader.require_current_reader()            
             if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
         return inv.send_ok(self.page_fields(meter, current_reader))
@@ -155,7 +163,7 @@ class MeterView(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_reader()
+            reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
             if reader.key() != meter.reader.key():
@@ -200,7 +208,7 @@ class MeterSettings(MonadHandler):
     def http_get(self, inv):
         meter_key = inv.get_string("meter_key")
         meter = Meter.get_meter(meter_key)
-        reader = Reader.require_reader()            
+        reader = Reader.require_current_reader()            
         if reader.key() != meter.reader.key():
             raise ForbiddenException()
         return inv.send_ok(self.page_fields(meter, reader))
@@ -208,7 +216,7 @@ class MeterSettings(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_reader()
+            reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
             if reader.key() != meter.reader.key():
@@ -238,7 +246,7 @@ class EditReader(MonadHandler):
     def http_get(self, inv):
         reader_key = inv.get_string("reader_key")
         reader = Reader.get_reader(reader_key)
-        current_reader = Reader.require_reader()       
+        current_reader = Reader.require_current_reader()       
         if current_reader.key() != reader.key():
             raise ForbiddenException()
         return inv.send_ok(self.page_fields(reader, current_reader))
@@ -246,7 +254,7 @@ class EditReader(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_reader()
+            reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
             if reader.key() != meter.reader.key():
@@ -280,7 +288,7 @@ class UploadView(MonadHandler):
         if meter.is_public:
             reader = None
         else:
-            reader = Reader.require_reader()
+            reader = Reader.require_current_reader()
             if reader.key() != meter.reader.key():
                 raise ForbiddenException()
 
@@ -289,7 +297,7 @@ class UploadView(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_reader()
+            reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = reader.get_meter(meter_key)
 
@@ -361,7 +369,7 @@ class ChartView(MonadHandler):
         
         chd = [month['kwh'] for month in months]
         labels = [datetime.datetime.strftime(month['start_date'], '%b %Y') for month in months]
-        return {'editor': Reader.get_reader(), 'meter': meter, 'months': months, 'data': ','.join(str(datum) for datum in chd), 'max_data': str(max(chd)), 'labels': '|'.join(labels)}
+        return {'current_reader': Reader.get_current_reader(), 'meter': meter, 'months': months, 'data': ','.join(str(datum) for datum in chd), 'max_data': str(max(chd)), 'labels': '|'.join(labels)}
 
 
 class ReadView(MonadHandler):
@@ -370,13 +378,11 @@ class ReadView(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.get_reader()
-            if reader is None:
-                raise UnauthorizedException()
+            current_reader = Reader.require_current_reader()
             read_key = inv.get_string("read_key")
             read = Read.get_read(read_key)
             meter = read.meter
-            if reader.key() != meter.reader.key():
+            if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
             if inv.has_control("delete"):
@@ -402,7 +408,7 @@ class ReadView(MonadHandler):
         hours = [{'display': '0'[len(str(hour)) - 1:] + str(hour), 'number': hour} for hour in range(24)]
         minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute), 'number': minute} for minute in range(60)]
 
-        return {'reader': Reader.get_reader(), 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
+        return {'current_reader': Reader.get_current_reader(), 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
     
     
 class MetersView(MonadHandler):
