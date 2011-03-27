@@ -107,10 +107,8 @@ class MRead(Monad, MonadHandler):
         '''    
         
     def page_fields(self, inv):
-        meters = Meter.gql("where is_public = TRUE").fetch(30)
-        fields = {'meters': meters}
+        fields = {'meters': Meter.gql("where is_public = TRUE").fetch(30), 'realm': inv.home_url()}
         
-        fields['realm'] = inv.home_url()
         user = users.get_current_user()
         if user is not None:
             reader = Reader.get_reader()

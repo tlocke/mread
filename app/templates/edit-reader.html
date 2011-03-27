@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Edit Reader: {{ editor.name }}{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; Reader: {{ editor.name }}{% endblock %}
+
+{% block content %} 
+<table>
+<tr>
+	<td>Name</td><td>{{ editor.name }}</td>
+</tr>
+<tr>
+	<td>OpenIds</td><td>
+	<ul>
+	{% for openid in openids %}
+	<li>{{ openid }}</li>
+	{% endfor %}
+	</ul>
+	</td>
+</table>
+
+{% ifequal editor.key current_editor.key %}
+<ul>
+<li><a href="reader-edit?reader_key={{ editor.key }}">Edit Reader</a>
+</ul>
+
+
+<form action="meter" method="post">
+<fieldset><legend>Insert Read</legend> <input type="hidden"
+	name="meter_key" value="{{ meter.key }}"> <input size="4"
+	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ now.year }}{% endif %}">-<select
+	name="read_month">
+	{% for month in months %}
+	<option value="{{ month }}" {% if controls.read_month %}{% ifequal month controls.read_month %}selected="selected"{% endifequal %}{% else %}{% ifequal month now.month %}selected="selected"{% endifequal %}{% endif %}>{{ month }}</option>
+	{% endfor %}
+</select>-<select name="read_day">
+	{% for day in days %}
+	<option value="{{ day }}" {% ifequal day now.day %}selected="selected"{% endifequal %}>{{ day }}</option>
+	{% endfor %}
+</select> <select name="read_hour">
+	{% for hour in hours %}
+	<option value="{{ hour }}" {% ifequal hour now.hour %}selected="selected"{% endifequal %}>{{ hour }}</option>
+	{% endfor %}
+</select>:<select name="read_minute">
+	{% for minute in minutes %}
+	<option value="{{ minute }}" {% ifequal minute now.minute %}selected="selected"{% endifequal %}>{{ minute }}</option>
+	{% endfor %}
+</select><br><br>
+<label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
+</form>
+{% endifequal %}
+<ul>
+{% ifequal meter.editor.key editor.key %}
+<li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
+{% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
+<li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
+{% endifequal %}
+<li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
+</ul>
+<table>
+	<caption>Reads</caption>
+	<tr>
+		<th>View</th>
+		<th>Date</th>
+		<th>kWh</th>
+	</tr>
+	{% for read in reads %}
+	<tr>
+		<td><a href="/read?read_key={{ read.key }}">View</a></td>
+		<td>{{ read.read_date|date:"Y-m-d H:i" }}</td>
+		<td>{{ read.kwh }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endblock %}

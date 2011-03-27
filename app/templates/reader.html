@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Reader: {{ editor.name }}{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; Reader: {{ editor.name }}{% endblock %}
+
+{% block content %} 
+<table>
+<tr>
+	<td>Name</td><td>{{ editor.name }}</td>
+</tr>
+<tr>
+	<td>OpenIds</td><td>
+	<ul>
+	{% for openid in openids %}
+	<li>{{ openid }}</li>
+	{% endfor %}
+	</ul>
+	</td>
+</table>
+
+<ul>
+<li><a href="reader-edit?reader_key={{ editor.key }}">Edit Reader</a>
+</ul>
+{% endblock %}
