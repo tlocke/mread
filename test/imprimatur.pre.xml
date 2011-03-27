@@ -24,6 +24,8 @@
 		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
 			<regex
 				pattern='&lt;a href="/_ah/login\?continue=http%3A//localhost%3A8080/&amp;amp;action=Logout"&gt;Log Out&lt;/a&gt;' />
+			<regex pattern='&gt;Me&lt;' />
+				
 			<response-code value="200" />
 		</request>
 	</test>

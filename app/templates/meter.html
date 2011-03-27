@@ -5,7 +5,7 @@
 {% block nav %}<a href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
 
 {% block content %} 
-{% ifequal meter.editor.key editor.key %}
+{% ifequal meter.reader.key current_reader.key %}
 <form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
 	name="meter_key" value="{{ meter.key }}"> <input size="4"

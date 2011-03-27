@@ -16,3 +16,7 @@ handlers:
   
 - url: /.*
   script: mread.py
+
+builtins:
+- remote_api: on
+- datastore_admin: on
