@@ -10,22 +10,33 @@
 	</test>
 	<test name="Try logging in.">
 		<!-- Look at log in page -->
-		<request path="/log-in">
+		<request path="/sign-in">
 			<response-code value="200" />
 		</request>
-		<!-- Log in -->
+		<!-- Sign in -->
 		<request
 			path="/_ah/login?email=test@example.com&amp;continue=http://localhost:@@test.port@@/&amp;action=Login"
 			follow-redirects="true">
+			<response-code value="200" />
+		</request>
+		<!-- Create account -->
+		<request path="/welcome" method="post">
 			<response-code value="200" />
 		</request>
 	</test>
 	<test name="View the meter.">
 		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
 			<regex
-				pattern='&lt;a href="/_ah/login\?continue=http%3A//localhost%3A8080/&amp;amp;action=Logout"&gt;Log Out&lt;/a&gt;' />
+				pattern='&lt;a href="/_ah/login\?continue=http%3A//localhost%3A8080/&amp;amp;action=Logout"&gt;Sign Out&lt;/a&gt;' />
 			<regex pattern='&gt;Me&lt;' />
-				
+
+			<response-code value="200" />
+		</request>
+	</test>
+	<test name="View meter settings.">
+		<request path="/meter-settings?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+			<regex pattern='&gt;Me&lt;' />
+
 			<response-code value="200" />
 		</request>
 	</test>
@@ -41,10 +52,11 @@
 			<response-code value="200" />
 		</request>
 	</test>
-	<test name="View the read read.">
+	<test name="View the read.">
 		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgDDA">
 			<response-code value="200" />
-			<regex pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;[\r\n]*&lt;input type="hidden" name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA"'/>
+			<regex
+				pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;[\r\n]*&lt;input type="hidden" name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA"' />
 		</request>
 	</test>
 	<test name="Insert a read with a blank value.">
@@ -62,50 +74,69 @@
 	</test>
 	<test name="Delete a read.">
 		<request path="/read" method="post">
-			<control name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA"/>
-			<control name="delete" value="Delete"/>
+			<control name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA" />
+			<control name="delete" value="Delete" />
 			<response-code value="303" />
 		</request>
 	</test>
 	<test name="Have a look at the upload page.">
 		<request path="/upload?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
-			<regex pattern='"/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"'/>
+			<regex pattern='"/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"' />
 			<response-code value="200" />
 		</request>
 	</test>
-		<test name="Try admin stuff.">
-		
-		<!-- Log out -->
-		
+	<test name="Try admin stuff.">
+
+		<!-- Sign out -->
+
 		<request
 			path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
-		
-		<!-- Log in as administrator -->
+
+		<!-- Sign in as administrator -->
 		<request
 			path="/_ah/login?email=admin@example.com&amp;admin=True&amp;continue=http://localhost:@@test.port@@/&amp;action=Login"
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
-		
+
 		<!-- Try sending the reminders -->
-		<request
-			path="/cron/reminders">
+		<request path="/cron/reminders">
 			<response-code value="200" />
 		</request>
-		
-		<!-- And log out -->
+
+		<!-- And Sign out -->
 		<request
 			path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
 	</test>
-	<test name="Try and view the meter without being logged on">
+	<test name="Try and view the meter without being signed in">
 		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
 			<response-code value="401" />
+		</request>
+	</test>
+	<test
+		name="Log in, change the meter to public and check it's there on the homepage.">
+		<request
+			path="/_ah/login?email=test@example.com&amp;continue=http://localhost:@@test.port@@/&amp;action=Login"
+			follow-redirects="true">
+			<response-code value="200" />
+		</request>
+		<request path="/meter-settings" method="post">
+			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="name" value="House" />
+			<control name="email_address" value="None" />
+			<control name="reminder_frequency" value="never" />
+			<control name="is_public" value="True" />
+		</request>
+		
+		<!-- Check the details of the public meter is shown -->
+		<request path="/">
+		<regex pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;[\r\n]&lt;/tr&gt;'/>
 		</request>
 	</test>
 </imprimatur>

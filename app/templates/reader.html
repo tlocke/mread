@@ -2,24 +2,35 @@
 
 {% block title %}MtrHub &gt; Reader: {{ editor.name }}{% endblock %}
 
-{% block nav %}<a href="/">MtrHub</a> &gt; Reader: {{ editor.name }}{% endblock %}
+{% block nav %}<a href="/">MtrHub</a> &gt; Reader: {{ reader.name }}{% endblock %}
+
+{% block login %}
+<p id="login">{% if current_reader %}
+{% if current_reader.key == reader.key %}
+{{ current_reader.name }}
+{% else %}
+	<a href="/reader?reader_key={{ current_reader.key }}">{{ current_reader.name }}</a>{% endif %} | <a href="{{ logout_url }}">Log Out</a>
+	{% else %} <a href="/log-in">Log In</a>{% endif %}</p>
+{% endblock %}
 
 {% block content %} 
 <table>
 <tr>
-	<td>Name</td><td>{{ editor.name }}</td>
+	<td>Name</td><td>{{ reader.name }}</td>
 </tr>
 <tr>
 	<td>OpenIds</td><td>
 	<ul>
-	{% for openid in openids %}
+	{% for openid in reader.openids %}
 	<li>{{ openid }}</li>
 	{% endfor %}
 	</ul>
 	</td>
 </table>
 
+{% ifequal current_reader.key reader.key %}
 <ul>
-<li><a href="reader-edit?reader_key={{ editor.key }}">Edit Reader</a>
+<li><a href="reader-settings?reader_key={{ reader.key }}">Reader Settings</a>
 </ul>
+{% endifequal %}
 {% endblock %}

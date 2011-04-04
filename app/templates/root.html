@@ -3,17 +3,16 @@
 {% if user %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
 {% else %}
 <p>
-Welcome to MtrHub. <a href="/log-in">Log in</a> to start storing electricity, gas and water meter
+Welcome to MtrHub. <a href="/sign-in">Sign in</a> to start storing electricity, gas and water meter
 readings for your property.
 {% endif %}
 </p>
 <table>
-	<caption>Public Meters</caption>
-	{% for meter in meters %}
-	<tr>
-		<td>{{ meter.editor.openid }}</td>
-		<td><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a></td>
-	</tr>
-	{% endfor %}
+<caption>Public Meters</caption>
+{% for meter in meters %}
+<tr>
+<td>{{ meter.reader.name }}</td><td><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a></td>
+</tr>
+{% endfor %}
 </table>
 {% endblock %}

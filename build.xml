@@ -160,34 +160,9 @@
       that you explicitly added.
 
     -->
-	<target name="compile" depends="compile-war, compile-app" />
+	<target name="compile" />
 
-	<target name="compile-war" depends="prepare-war" description="Compile Java sources">
-		<path id="war.compile.classpath">
-			<fileset dir="${war.build}/WEB-INF/lib">
-				<include name="*.jar" />
-			</fileset>
-
-			<fileset dir="${catalina.home}/lib">
-				<include name="*.jar" />
-			</fileset>
-		</path>
-
-		<!-- Compile Java classes as necessary -->
-		<mkdir dir="${war.build}/WEB-INF/classes" />
-
-		<javac srcdir="${war.src}" destdir="${war.build}/WEB-INF/classes" debug="${compile.debug}" deprecation="${compile.deprecation}" optimize="${compile.optimize}">
-			<classpath refid="war.compile.classpath" />
-		</javac>
-
-		<!-- Copy application resources -->
-		<copy todir="${war.build}/WEB-INF/classes">
-			<fileset dir="${war.src}" excludes="**/*.java" />
-		</copy>
-
-		<jar jarfile="${build.home}/imprimatur.war" basedir="${war.build}" />
-
-	</target>
+	
 
 	<!-- ==================== Dist Target ===================================== -->
 	<!--
@@ -247,9 +222,6 @@
   NOTE:  This is the logical opposite of the "remove" target.
 
 -->
-	<target name="install" depends="compile" description="Install application to servlet container">
-		<deploy url="${manager.url}" username="${manager.username}" password="${manager.password}" path="${app.path}" war="file://${build.home}/imprimatur.war" />
-	</target>
 
 
 	<!-- ==================== Javadoc Target ================================== -->
@@ -280,9 +252,6 @@
   application you are currently developing has been installed.
 
 -->
-	<target name="list" description="List installed applications on servlet container">
-		<list url="${manager.url}" username="${manager.username}" password="${manager.password}" />
-	</target>
 
 	<!-- ==================== Prepare Target ================================== -->
 	<!--
@@ -333,9 +302,6 @@
   then start the web application. 
 
 -->
-	<target name="reload" depends="compile" description="Reload application on servlet container">
-		<reload url="${manager.url}" username="${manager.username}" password="${manager.password}" path="${app.path}" />
-	</target>
 
 	<!-- ==================== Remove Target =================================== -->
 	<!--
@@ -346,9 +312,6 @@
   NOTE:  This is the logical opposite of the "install" target.
 
 -->
-	<target name="remove" description="Remove application on servlet container">
-		<undeploy url="${manager.url}" username="${manager.username}" password="${manager.password}" path="${app.path}" />
-	</target>
 
 	<target name="test" description="Test">
 			<copy file="${test.home}/imprimatur.pre.xml" tofile="${test.home}/imprimatur.xml" />

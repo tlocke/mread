@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Sign In{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; Sign In{% endblock %}
+
+{% block login %}{% endblock %}
+
+{% block content %}
+<ul>
+{% for provider in providers %}
+	<li><a href="{{ provider.url }}">{{provider.name}}</a></li>
+{% endfor %}
+</ul>
+{% endblock %}

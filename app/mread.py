@@ -43,12 +43,6 @@ class Reader(db.Model):
         if reader is None:
             raise UnauthorizedException()
         return reader
-    
-    def get_meter(self, key):
-        meter = Meter.get(key)
-        if self.key() != meter.reader.key():
-            raise ForbiddenException()
-        return meter
 
 
 class ReaderView(MonadHandler):
@@ -102,7 +96,7 @@ class Read(db.Model, MonadHandler):
 
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/_ah/login_required': LogIn(), '/log-in': LogIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReadView(), '/edit-reader': EditReader()})
+        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome()})
         # Copy to reader
         '''
         for editor in Editor.all():
@@ -120,20 +114,16 @@ class MRead(Monad, MonadHandler):
         user = users.get_current_user()
         if user is not None:
             current_reader = Reader.get_current_reader()
-            if current_reader is None:
-                current_reader = Reader(openids=[user.nickname()])
-                current_reader.put()
-                meter = Meter(reader=current_reader)
-                meter.put()
-            fields['current_reader'] = current_reader
-            fields['meter'] = Meter.gql("where reader = :1", current_reader).get()
+            if current_reader is not None:
+                fields['current_reader'] = current_reader
+                fields['meter'] = Meter.gql("where reader = :1", current_reader).get()
         return fields
 
     def http_get(self, inv):
         return inv.send_ok(self.page_fields(inv))
 
 
-class LogIn(MonadHandler):
+class SignIn(MonadHandler):
     def http_get(self, inv):
         return inv.send_ok(self.page_fields())
     
@@ -144,9 +134,38 @@ class LogIn(MonadHandler):
             providers = []
             fields['providers'] = providers
             for url, name in {'google.com/accounts/o8/id': 'Google', 'yahoo.com': 'Yahoo', 'myspace.com': 'MySpace', 'aol.com': 'AOL', 'myopenid.com': 'MyOpenID'}.iteritems():
-                providers.append({'name': name, 'url': users.create_login_url(dest_url="/", federated_identity=url)})
+                providers.append({'name': name, 'url': users.create_login_url(dest_url="/welcome", federated_identity=url)})
         return fields
     
+
+class Welcome(MonadHandler):
+    def http_get(self, inv):
+        if Reader.get_current_reader() is None:
+            return inv.send_ok(self.page_fields(None, None))
+        else:
+            return inv.send_found('/')
+
+    def http_post(self, inv):
+        user = users.get_current_user()
+        if user is None:
+            raise UnauthorizedException()
+        
+        current_reader = Reader.get_current_reader()
+        if current_reader is None:
+            current_reader = Reader(openids=[user.nickname()])
+            current_reader.put()
+            
+        meter = Meter.gql("where reader = :1", current_reader).get()
+        if meter is None:
+            meter = Meter(reader=current_reader)
+            meter.put()
+        
+        return inv.send_ok(self.page_fields(current_reader, meter))
+
+        
+    def page_fields(self, current_reader, meter):
+        return {'current_reader': current_reader, 'meter': meter}
+
     
 class MeterView(MonadHandler):
     def http_get(self, inv):
@@ -163,10 +182,10 @@ class MeterView(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_current_reader()
+            current_reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
-            if reader.key() != meter.reader.key():
+            if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
             if inv.has_control('settings'):
@@ -176,7 +195,7 @@ class MeterView(MonadHandler):
                 meter.set_reminder(email_address, frequency)
                 meter.is_public = is_public
                 meter.put()
-                fields = self.page_fields(meter, reader)
+                fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Settings updated successfully.'
                 return inv.send_ok(fields)
             else:
@@ -184,11 +203,11 @@ class MeterView(MonadHandler):
                 kwh = inv.get_float("kwh")
                 read = Read(meter=meter, read_date=read_date, kwh=kwh)
                 read.put()
-                fields = self.page_fields(meter, reader)
+                fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Read added successfully.'
                 return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(meter, reader)
+            e.values = self.page_fields(meter, current_reader)
             raise e
 
     def page_fields(self, meter, current_reader):
@@ -216,10 +235,10 @@ class MeterSettings(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_current_reader()
+            current_reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
             meter = Meter.get_meter(meter_key)
-            if reader.key() != meter.reader.key():
+            if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
             is_public = inv.has_control('is_public')
@@ -231,18 +250,18 @@ class MeterSettings(MonadHandler):
             meter.is_public = is_public
             meter.name = name
             meter.put()
-            fields = self.page_fields(meter, reader)
+            fields = self.page_fields(meter, current_reader)
             fields['message'] = 'Settings updated successfully.'
             return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(meter, reader)
+            e.values = self.page_fields(meter, current_reader)
             raise e
 
-    def page_fields(self, meter, editor):
-        return {'editor': editor, 'meter': meter}
+    def page_fields(self, meter, current_reader):
+        return {'current_reader': current_reader, 'meter': meter}
 
 
-class EditReader(MonadHandler):
+class ReaderSettings(MonadHandler):
     def http_get(self, inv):
         reader_key = inv.get_string("reader_key")
         reader = Reader.get_reader(reader_key)
@@ -254,30 +273,27 @@ class EditReader(MonadHandler):
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_current_reader()
-            meter_key = inv.get_string("meter_key")
-            meter = Meter.get_meter(meter_key)
-            if reader.key() != meter.reader.key():
+            current_reader = Reader.require_current_reader()
+            reader_key = inv.get_string("reader_key")
+            reader = Reader.get_reader(reader_key)
+            if current_reader.key() != reader.key():
                 raise ForbiddenException()
-            
-            is_public = inv.has_control('is_public')
-            email_address = inv.get_string('email_address')
-            frequency = inv.get_string('reminder_frequency')
-            name = inv.get_string('name')
 
-            meter.set_reminder(email_address, frequency)
-            meter.is_public = is_public
-            meter.name = name
-            meter.put()
-            fields = self.page_fields(meter, reader)
-            fields['message'] = 'Settings updated successfully.'
-            return inv.send_ok(fields)
+            if inv.has_control('delete_openid'):
+                pass
+            else:
+                name = inv.get_string('name')
+                reader.name = name
+                reader.put()
+                fields = self.page_fields(reader, current_reader)
+                fields['message'] = 'Settings updated successfully.'
+                return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(meter, reader)
+            e.values = self.page_fields(reader, current_reader)
             raise e
 
-    def page_fields(self, editor, current_editor):
-        return {'current_editor': editor, 'current_editor': current_editor}
+    def page_fields(self, reader, current_reader):
+        return {'reader': reader, 'current_reader': current_reader}
 
 
 
@@ -285,21 +301,20 @@ class UploadView(MonadHandler):
     def http_get(self, inv):
         meter_key = inv.get_string('meter_key')
         meter = Meter.get_meter(meter_key)
-        if meter.is_public:
-            reader = None
-        else:
-            reader = Reader.require_current_reader()
-            if reader.key() != meter.reader.key():
-                raise ForbiddenException()
+        current_reader = Reader.require_current_reader()
+        if current_reader.key() != meter.reader.key():
+            raise ForbiddenException()
 
-        return inv.send_ok(self.page_fields(meter, reader))
+        return inv.send_ok(self.page_fields(meter, current_reader))
 
 
     def http_post(self, inv):
         try:
-            reader = Reader.require_current_reader()
+            current_reader = Reader.require_current_reader()
             meter_key = inv.get_string("meter_key")
-            meter = reader.get_meter(meter_key)
+            meter = Meter.get_meter(meter_key)
+            if current_reader.key() != meter.reader.key():
+                raise ForbiddenException()
 
             file_item = inv.get_file("spreadsheet")
             if file_item.filename.endswith(".csv"):
@@ -314,17 +329,17 @@ class UploadView(MonadHandler):
                     kwh = float(row[1].strip())
                     read = Read(meter=meter, read_date=read_date, kwh=kwh)
                     read.put()
-                fields = self.page_fields(meter, reader)
+                fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'File imported successfully.'
                 return inv.send_ok(fields)
             else:
                 raise UserException("The file name must end with '.csv.'")
         except UserException, e:
-            e.values = self.page_fields(meter, reader)
+            e.values = self.page_fields(meter, current_reader)
             raise e
 
-    def page_fields(self, meter, editor):
-        return {'editor': editor, 'meter': meter}
+    def page_fields(self, meter, current_reader):
+        return {'current_reader': current_reader, 'meter': meter}
 
 
 class ChartView(MonadHandler):
@@ -374,7 +389,10 @@ class ChartView(MonadHandler):
 
 class ReadView(MonadHandler):
     def http_get(self, inv):
-        return inv.send_ok(self.page_fields(inv))
+        current_reader = Reader.require_current_reader()
+        read_key = inv.get_string("read_key")
+        read = Read.get_read(read_key)
+        return inv.send_ok(self.page_fields(current_reader, read))
 
     def http_post(self, inv):
         try:
@@ -396,19 +414,16 @@ class ReadView(MonadHandler):
                 fields['message'] = 'Read edited successfully.'
                 return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(inv)
+            e.values = self.page_fields(current_reader, read)
             raise e
 
-    def page_fields(self, inv):
-        read_key = inv.get_string("read_key")
-        read = Read.get_read(read_key)
-        
+    def page_fields(self, current_reader, read):      
         days = [{'display': '0'[len(str(day)) - 1:] + str(day), 'number': day} for day in range(1,32)]        
         months = [{'display': '0'[len(str(month)) - 1:] + str(month), 'number': month} for month in range(1,13)]
         hours = [{'display': '0'[len(str(hour)) - 1:] + str(hour), 'number': hour} for hour in range(24)]
         minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute), 'number': minute} for minute in range(60)]
 
-        return {'current_reader': Reader.get_current_reader(), 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
+        return {'current_reader': current_reader, 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
     
     
 class MetersView(MonadHandler):

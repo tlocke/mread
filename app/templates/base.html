@@ -25,9 +25,13 @@
 <body>
 <p id="nav">{% block nav %}Polifesto{% endblock %}</p>
 {% block login %}
-<p id="login">{% if user %}
-	<a href="/reader?reader_key={{ current_reader.key }}">{{ current_reader.name }}</a> | <a href="{{ logout_url }}">Log Out</a>
-	{% else %} <a href="/log-in">Log In</a>{% endif %}</p>
+<p id="sign-in">{% if user %}
+                {% if current_reader %}
+	<a href="/reader?reader_key={{ current_reader.key }}">{{ current_reader.name }}</a> | <a href="{{ signout_url }}">Sign Out</a>
+	{% else %}
+	<a href="/welcome">Welcome</a>
+	{% endif %}
+	{% else %} <a href="/sign-in">Sign In</a>{% endif %}</p>
 {% endblock %}
 <div id="content">{% if message %}
 <p><em>{{ message }}</em></p>

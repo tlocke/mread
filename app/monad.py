@@ -84,7 +84,7 @@ class Invocation():
         user = users.get_current_user()
         if user is not None:
             values['user'] = user
-            values['logout_url'] = users.create_logout_url('/')
+            values['signout_url'] = users.create_logout_url('/')
         self.start_response(response, self.header_list)
         if self.path_info == '/':
             template_name = "root." + type
@@ -113,6 +113,12 @@ class Invocation():
         self.headers.add_header('Location', location)
         self._send('301 Moved Permanently')
 
+    def send_found(self, location):
+        if urlparse.urlparse(location).scheme == '':
+            location = self.home_url() + location
+        self.headers.add_header('Location', location)
+        self._send('302 Found')
+        
     def send_see_other(self, url):
         if urlparse.urlparse(url).scheme == '':
             url = self.home_url() + url
