@@ -5,12 +5,12 @@
 {% block nav %}<a href="/">MtrHub</a> &gt; Reader: {{ reader.name }}{% endblock %}
 
 {% block login %}
-<p id="login">{% if current_reader %}
+<p id="sign-in">{% if current_reader %}
 {% if current_reader.key == reader.key %}
 {{ current_reader.name }}
 {% else %}
-	<a href="/reader?reader_key={{ current_reader.key }}">{{ current_reader.name }}</a>{% endif %} | <a href="{{ logout_url }}">Log Out</a>
-	{% else %} <a href="/log-in">Log In</a>{% endif %}</p>
+	<a href="/reader?reader_key={{ current_reader.key }}">{{ current_reader.name }}</a>{% endif %} | <a href="{{ signout_url }}">Sign Out</a>
+	{% else %} <a href="/sign-in">Sign In</a>{% endif %}</p>
 {% endblock %}
 
 {% block content %} 

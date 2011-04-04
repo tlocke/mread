@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Welcome{% endblock %}
+
+{% block nav %}<a href="/">MtrHub</a> &gt; Welcome{% endblock %}
+
+{% block login %}{% endblock %}
+
+{% block content %}
+{% if user %}
+	{% if current_reader %}
+		<p>Your account has been successfully created. Now you can start <a href="/meter?meter_key={{ meter.key }}">adding meter readings</a>.</p>
+	{% else %}
+	<p>Welcome to MtrHub. You're signed in with the Openid {{ user.nickname }}. The next step is to
+	create an account...</p>
+	<br>
+	<form action="/welcome" method="post">
+	<fieldset>
+	<input type="submit" value="Create Account">
+	</fieldset>
+	</form>
+	<br>
+	<p>Or you can <a href="{{ signout_url }}">sign out</a>.</p>
+	{% endif %}
+{% else %}
+	<p>It looks like you tried to log in using OpenId, but it didn't work for some reason.</p>
+{% endif %}
+{% endblock %}
