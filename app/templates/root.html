@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% block title %}MtrHub{% endblock %}{% block nav %}MtrHub{% endblock %} {% block content%}
 
-{% if user %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
+{% if current_reader %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
 {% else %}
 <p>
 Welcome to MtrHub. <a href="/sign-in">Sign in</a> to start storing electricity, gas and water meter
