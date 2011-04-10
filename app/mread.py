@@ -20,6 +20,7 @@ import dateutil.relativedelta
 class Reader(db.Model):
     name = db.StringProperty(required=True, default='Me')
     openids = db.StringListProperty(required=True)
+    proposed_openid = db.StringProperty(required=False, default='')
     
     @staticmethod
     def get_current_reader():
@@ -138,27 +139,60 @@ class SignIn(MonadHandler):
 
 class Welcome(MonadHandler):
     def http_get(self, inv):
-        if Reader.get_current_reader() is None:
+        user = users.get_current_user()
+        if user is None:
             return inv.send_ok(self.page_fields(None, None))
         else:
-            return inv.send_found('/')
+            current_reader = Reader.get_current_reader()
+            if current_reader is None:
+                fields = self.page_fields(None, None)
+                proposed_readers = Reader.gql("where proposed_openid = :1", user.nickname()).fetch()
+                if len(proposed_readers) > 0:
+                    fields['proposed_readers'] = proposed_readers
+                return inv.send_ok(fields)
+            else:            
+                return inv.send_found('/')
 
     def http_post(self, inv):
         user = users.get_current_user()
         if user is None:
             raise UnauthorizedException()
         
-        current_reader = Reader.get_current_reader()
-        if current_reader is None:
-            current_reader = Reader(openids=[user.nickname()])
-            current_reader.put()
+        if inv.has_control('associate'):
+            current_reader = Reader.get_current_reader()
+            if current_reader is None:
+                reader_key = inv.get_string('reader_key')
+                reader = Reader.get_reader(reader_key)
+                if reader.proposed_openid == user.nickname():
+                    reader.proposed_openid = ''
+                    reader.openids.append(user.nickname())
+                    reader.put()
+                    current_reader = Reader.get_current_reader()
+                    meter = Meter.gql("where reader = :1", current_reader).get()
+                    fields = self.page_fields(current_reader, meter)
+                    fields['message'] = 'The OpenId ' + user.nickname() + ' has been successfully associated with the reader ' + reader.name + '.'
+                    inv.send_ok(fields)
+                else:
+                    e = UserException("Can't associate " + user.nickname() + " with the account " + reader.name + " because the OpenId you're signed in with doesn't match the proposed OpenId.")
+                    e.values = self.page_fields(None, None)
+                    raise e
+            else:
+                meter = Meter.gql("where reader = :1", current_reader).get()
+                e = UserException("The OpenId " + user.nickname() + " is already associated with an account.")
+                e.values = self.page_fields(current_reader, meter) 
+                raise e
+        else:
+            current_reader = Reader.get_current_reader()
+            if current_reader is None:
+                current_reader = Reader(openids=[user.nickname()])
+                current_reader.put()
             
-        meter = Meter.gql("where reader = :1", current_reader).get()
-        if meter is None:
-            meter = Meter(reader=current_reader)
-            meter.put()
+            meter = Meter.gql("where reader = :1", current_reader).get()
+            if meter is None:
+                meter = Meter(reader=current_reader)
+                meter.put()
         
-        return inv.send_ok(self.page_fields(current_reader, meter))
+            return inv.send_ok(self.page_fields(current_reader, meter))
 
         
     def page_fields(self, current_reader, meter):
@@ -266,7 +300,7 @@ class ReaderSettings(MonadHandler):
         current_reader = Reader.require_current_reader()       
         if current_reader.key() != reader.key():
             raise ForbiddenException()
-        return inv.send_ok(self.page_fields(reader, current_reader))
+        return inv.send_ok(self.page_fields(reader))
 
 
     def http_post(self, inv):
@@ -279,19 +313,29 @@ class ReaderSettings(MonadHandler):
 
             if inv.has_control('delete_openid'):
                 pass
+            elif inv.has_control('propose_openid'):
+                proposed_openid = inv.get_string('proposed_openid')
+                reader.proposed_openid = proposed_openid.strip()
+                reader.put()
+                fields = self.page_fields(reader)
+                if len(proposed_openid) == 0:
+                    fields['message'] = 'Proposed OpenId successfully set to blank.'
+                else:
+                    fields['message'] = 'Proposed OpenId set successfully. Now sign out and then sign in using the proposed OpenId'
+                return inv.send_ok(fields)
             else:
                 name = inv.get_string('name')
                 reader.name = name
                 reader.put()
-                fields = self.page_fields(reader, current_reader)
+                fields = self.page_fields(reader)
                 fields['message'] = 'Settings updated successfully.'
                 return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(reader, current_reader)
+            e.values = self.page_fields(reader)
             raise e
 
-    def page_fields(self, reader, current_reader):
-        return {'reader': reader, 'current_reader': current_reader}
+    def page_fields(self, reader):
+        return {'reader': reader, 'current_reader': reader}
 
 
 

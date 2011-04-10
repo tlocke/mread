@@ -11,6 +11,33 @@
 	{% if current_reader %}
 		<p>Your account has been successfully created. Now you can start <a href="/meter?meter_key={{ meter.key }}">adding meter readings</a>.</p>
 	{% else %}
+		{% if proposed_readers %}
+		<p>Welcome to MtrHub. You're signed in with the Openid {{ user.nickname }}. You can associate this OpenId with an existing account:
+		
+	{% for proposed_reader in proposed_readers %}
+	<form action="/welcome" method="post">
+	<fieldset><legend>Associate this OpenId with an existing account</legend>
+	<input type="hidden" name="reader_key" value="proposed_reader.key">
+		<table>
+		<tr><td>Name</td><td>{{ proposed_reader.name }}</td></tr>
+		<tr><td>OpenIds</td><td><ul>{% for openid in proposed_reader.openids %}{{ openid }}{% endfor %}</ul></td>
+		</table>
+		<input type="submit" name="associate" value="Associate">
+	</fieldset>
+	</form>
+	<br>
+	{% endfor %}
+	
+	<p>Or you can create an account...</p>
+	<br>
+	<form action="/welcome" method="post">
+	<fieldset>
+	<input type="submit" value="Create Account">
+	</fieldset>
+	</form>
+	<br>
+	<p>Or you can <a href="{{ signout_url }}">sign out</a>.</p>
+		{% else %}
 	<p>Welcome to MtrHub. You're signed in with the Openid {{ user.nickname }}. The next step is to
 	create an account...</p>
 	<br>
@@ -21,6 +48,7 @@
 	</form>
 	<br>
 	<p>Or you can <a href="{{ signout_url }}">sign out</a>.</p>
+		{% endif %}
 	{% endif %}
 {% else %}
 	<p>It looks like you tried to log in using OpenId, but it didn't work for some reason.</p>

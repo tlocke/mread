@@ -21,9 +21,6 @@
 </form></p>
 {% else %}
 
-{% if reader.proposed_openid %}
-To add your proposed OpenId '{{ reader.proposed_openid }}', sign out, then sign in using your proposed OpenId.
-{% endif %}
 <form action="reader-settings" method="post">
 <fieldset><legend>Update Reader</legend>
 	<input type="hidden" name="reader_key" value="{{ reader.key }}">

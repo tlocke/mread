@@ -31,7 +31,7 @@
 </form>
 {% endifequal %}
 <ul>
-{% ifequal meter.editor.key editor.key %}
+{% ifequal meter.reader.key current_reader.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
 {% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
