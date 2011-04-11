@@ -146,7 +146,7 @@ class Welcome(MonadHandler):
             current_reader = Reader.get_current_reader()
             if current_reader is None:
                 fields = self.page_fields(None, None)
-                proposed_readers = Reader.gql("where proposed_openid = :1", user.nickname()).fetch()
+                proposed_readers = Reader.gql("where proposed_openid = :1", user.nickname()).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
                 return inv.send_ok(fields)
@@ -323,6 +323,13 @@ class ReaderSettings(MonadHandler):
                 else:
                     fields['message'] = 'Proposed OpenId set successfully. Now sign out and then sign in using the proposed OpenId'
                 return inv.send_ok(fields)
+            elif inv.has_control('delete'):
+                for meter in Meter.gql("where reader = :1", reader):
+                    for read in Read.gql("where meter = :1", meter):
+                        read.delete()
+                    meter.delete
+                reader.delete()
+                return inv.send_found('/welcome')
             else:
                 name = inv.get_string('name')
                 reader.name = name

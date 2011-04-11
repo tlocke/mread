@@ -7,8 +7,8 @@
 {% block content %}
 {% if controls.delete %}
 
-<form action="reader-settings"><fieldset><input type="hidden" name="reader_key" value="{{ reader.key }}">
-<p>Are you sure you want to delete this reader and all associated data including meters and reads?</p>
+<form action="reader-settings" method="post"><fieldset><input type="hidden" name="reader_key" value="{{ reader.key }}">
+<p>Are you sure you want to delete this account and all associated data including meters and reads?</p>
 	<p>
 	<a href="reader-settings?reader_key={{ reader.key }}">Cancel</a> <input type="submit" name="delete" value="Delete">
 	</p></fieldset>
