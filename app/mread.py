@@ -450,7 +450,8 @@ class ReadView(MonadHandler):
             return inv.send_ok(self.page_fields(current_reader, read))
         else:
             raise ForbiddenException()
-        
+
+  
     def http_post(self, inv):
         try:
             current_reader = Reader.require_current_reader()

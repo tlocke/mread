@@ -31,12 +31,18 @@
 </form>
 {% endifequal %}
 <ul>
+<li>{% if reads|length > 1 %}
+	<a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a>
+	{% else %}
+	Once there are two or more reads, you'll be able to see a chart of your electricity
+	consumption.
+	{% endif %}
+</li>
 {% ifequal meter.reader.key current_reader.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
 {% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
 {% endifequal %}
-<li><a href="chart?meter_key={{ meter.key }}">Chart of last 12 months</a></li>
 </ul>
 <table>
 	<caption>Reads</caption>
