@@ -67,30 +67,19 @@ class Invocation():
     def reconstruct_url(self):
         return self.home_url() + quote(self.environ.get('PATH_INFO',''))
 
-
-    def _send(self, response, values=None):
-        if values is None:
-            self.start_response(response, self.header_list)
-            return
-
-        if not values.has_key('type'):
-            values['type'] = 'html'
-        type = values['type']
-        if Invocation.content_types.has_key(type):
-            self.headers.add_header('Content-Type', Invocation.content_types[type])
-        else:
-            raise UserException('Content type not recognized')
+    def _send(self, response):
+        self.start_response(response, self.header_list)
+        return
+        
+    def _send_template(self, response, values, template_name, type='html'):
+        self.headers.add_header('Content-Type', Invocation.content_types[type])
         values['controls'] = self.controls
         user = users.get_current_user()
         if user is not None:
             values['user'] = user
             values['signout_url'] = users.create_logout_url('/')
         self.start_response(response, self.header_list)
-        if self.path_info == '/':
-            template_name = "root." + type
-        else:
-            template_name = self.path_info[1:] + "." + type
-        return [template.render(os.path.join(self.template_dir, template_name), values)]
+        return [template.render(os.path.join(self.template_dir, template_name + "." + type), values)]
     
     def home_url(self):
         url = self.environ['wsgi.url_scheme']+'://'
@@ -105,9 +94,17 @@ class Invocation():
                 if self.environ['SERVER_PORT'] != '80':
                     url += ':' + self.environ['SERVER_PORT']
         return url
-    
+
+
+    def _find_template_name(self):
+        if self.path_info == '/':
+            return "root"
+        else:
+            return self.path_info[1:]
+        
+            
     def send_ok(self, values):
-        return self._send('200 OK', values)
+        return self._send_template('200 OK', values, self._find_template_name())
 
     def send_moved_permanently(self, location):
         self.headers.add_header('Location', location)
@@ -126,8 +123,7 @@ class Invocation():
         self._send('303 See Other')
 
     def send_unauthorized(self):
-        self._send('401 Unauthorized')
-        return ['401 Unauthorized']
+        return self._send_template('401 Unauthorized', {}, '401')
 
     def send_forbidden(self):
         self._send('403 Forbidden')
@@ -138,7 +134,7 @@ class Invocation():
         return ['405 Method Not Allowed']
     
     def send_user_exception(self, values):
-        return self._send('418 User Exception', values)
+        return self._send_template('418 User Exception', values, self._find_template_name())
 
     def send_not_found(self, message=None):
         self._send('404 Not Found')

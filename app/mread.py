@@ -135,7 +135,7 @@ class SignIn(MonadHandler):
             return inv.send_ok(fields)
         else:
             return inv.send_found('/welcome')
-    
+
 
 class Welcome(MonadHandler):
     def http_get(self, inv):
