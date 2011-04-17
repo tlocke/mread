@@ -79,6 +79,18 @@
 			<response-code value="303" />
 		</request>
 	</test>
+	<test name="Insert another read.">
+		<request path="/meter" method="post">
+			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="read_year" value="2011" />
+			<control name="read_month" value="02" />
+			<control name="read_day" value="15" />
+			<control name="read_hour" value="18" />
+			<control name="read_minute" value="40" />
+			<control name="kwh" value="49" />
+			<response-code value="200" />
+		</request>
+	</test>
 	<test name="Have a look at the upload page.">
 		<request path="/upload?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
 			<regex pattern='"/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"' />
@@ -145,10 +157,22 @@
 			<control name="reminder_frequency" value="never" />
 			<control name="is_public" value="True" />
 		</request>
-		
+
+		<!-- Sign out -->
+		<request
+			path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
+			follow-redirects="true">
+			<response-code value="200" />
+		</request>
+
 		<!-- Check the details of the public meter is shown -->
 		<request path="/">
-		<regex pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;[\r\n]&lt;/tr&gt;'/>
+			<regex
+				pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;[\r\n]&lt;/tr&gt;' />
+		</request>
+
+		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgEDA">
+			<response-code value="200" />
 		</request>
 	</test>
 </imprimatur>

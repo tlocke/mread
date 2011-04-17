@@ -438,11 +438,19 @@ class ChartView(MonadHandler):
 
 class ReadView(MonadHandler):
     def http_get(self, inv):
-        current_reader = Reader.require_current_reader()
+        current_reader = Reader.get_current_reader()
         read_key = inv.get_string("read_key")
         read = Read.get_read(read_key)
-        return inv.send_ok(self.page_fields(current_reader, read))
-
+        meter = read.meter
+        if meter.is_public:
+            return inv.send_ok(self.page_fields(current_reader, read))
+        elif current_reader is None:
+            raise UnauthorizedException()
+        elif current_reader.key() == meter.reader.key():
+            return inv.send_ok(self.page_fields(current_reader, read))
+        else:
+            raise ForbiddenException()
+        
     def http_post(self, inv):
         try:
             current_reader = Reader.require_current_reader()
