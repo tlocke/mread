@@ -136,11 +136,8 @@ class Invocation():
     def send_user_exception(self, values):
         return self._send_template('418 User Exception', values, self._find_template_name())
 
-    def send_not_found(self, message=None):
-        self._send('404 Not Found')
-        if message is None:
-            message = '404 Not Found'
-        return [message]
+    def send_not_found(self, values={}):
+        return self._send_template('404 Not Found', values, '404')
     
     def has_control(self, name):
         return self.controls.has_key(name)
