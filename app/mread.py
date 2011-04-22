@@ -97,7 +97,7 @@ class Read(db.Model, MonadHandler):
 
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome()})
+        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome(), '/export-reads': ExportReads()})
         # Copy to reader
         '''
         for editor in Editor.all():
@@ -253,6 +253,21 @@ class MeterView(MonadHandler):
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
         return {'current_reader': current_reader, 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+
+
+class ExportReads(MonadHandler):
+    def http_get(self, inv):
+        meter_key = inv.get_string("meter_key")
+        meter = Meter.get_meter(meter_key)
+        if meter.is_public:
+            current_reader = Reader.get_current_reader()
+        else:
+            current_reader = Reader.require_current_reader()            
+            if current_reader.key() != meter.reader.key():
+                raise ForbiddenException()
+
+        reads = Read.gql("where meter = :1 order by read_date desc", meter).fetch(1000)
+        return inv.send_ok({'reads': reads, 'template-name': 'export_reads.csv', 'content-type': 'text/csv', 'content-disposition': 'attachment; filename=reads.csv;'})
 
 
 class MeterSettings(MonadHandler):

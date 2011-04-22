@@ -38,6 +38,9 @@
 	consumption.
 	{% endif %}
 </li>
+{% if reads|length > 0 %}
+<li><a href="export-reads?meter_key={{ meter.key }}">Export reads as a CSV file</a></li>
+{% endif %}
 {% ifequal meter.reader.key current_reader.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
 {% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}

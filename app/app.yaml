@@ -13,7 +13,11 @@ handlers:
 - url: /cron/.*
   script: cron.py
   login: admin
-  
+
+- url: /robots.txt
+  static_files: static/robots.txt
+  upload: static/robots.txt
+
 - url: /.*
   script: mread.py
 

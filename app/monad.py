@@ -39,8 +39,6 @@ class ForbiddenException(HttpException):
 
 
 class Invocation():
-    content_types = {'html': 'text/html', 'atom': 'application/xhtml+xml', 'xrds': 'application/xrds+xml'}
-    
     def _process_form(self, form):
         for key in form.keys():
             field = form[key]    
@@ -71,15 +69,31 @@ class Invocation():
         self.start_response(response, self.header_list)
         return
         
-    def _send_template(self, response, values, template_name, type='html'):
-        self.headers.add_header('Content-Type', Invocation.content_types[type])
+    def _send_template(self, response, values):
+        if 'content-type' in values:
+            content_type = values['content-type']
+        else:
+            content_type = 'text/html'
+        self.headers.add_header('Content-Type', content_type)
+        
+        if 'content-disposition' in values:
+            self.headers.add_header('Content-Disposition', values['content-disposition'])
+            
+        if 'template-name' in values:
+            template_name = values['template-name']
+        else:
+            if self.path_info == '/':
+                template_name = "root.html"
+            else:
+                template_name = self.path_info[1:] + '.html'
+            
         values['controls'] = self.controls
         user = users.get_current_user()
         if user is not None:
             values['user'] = user
             values['signout_url'] = users.create_logout_url('/')
         self.start_response(response, self.header_list)
-        return [template.render(os.path.join(self.template_dir, template_name + "." + type), values)]
+        return [template.render(os.path.join(self.template_dir, template_name), values)]
     
     def home_url(self):
         url = self.environ['wsgi.url_scheme']+'://'
@@ -95,16 +109,9 @@ class Invocation():
                     url += ':' + self.environ['SERVER_PORT']
         return url
 
-
-    def _find_template_name(self):
-        if self.path_info == '/':
-            return "root"
-        else:
-            return self.path_info[1:]
-        
             
     def send_ok(self, values):
-        return self._send_template('200 OK', values, self._find_template_name())
+        return self._send_template('200 OK', values)
 
     def send_moved_permanently(self, location):
         self.headers.add_header('Location', location)
@@ -123,7 +130,7 @@ class Invocation():
         self._send('303 See Other')
 
     def send_unauthorized(self):
-        return self._send_template('401 Unauthorized', {}, '401')
+        return self._send_template('401 Unauthorized', {'template-name': '401.html'})
 
     def send_forbidden(self):
         self._send('403 Forbidden')
@@ -134,15 +141,20 @@ class Invocation():
         return ['405 Method Not Allowed']
     
     def send_user_exception(self, values):
-        return self._send_template('418 User Exception', values, self._find_template_name())
+        return self._send_template('418 User Exception', values)
 
-    def send_not_found(self, values={}):
-        return self._send_template('404 Not Found', values, '404')
+    def send_not_found(self, values=None):
+        if values is None:
+            values = {}
+            
+        if 'template-name' not in values:
+            values['template-name'] = '404.html'
+            
+        return self._send_template('404 Not Found', values)
     
     def has_control(self, name):
         return self.controls.has_key(name)
-      
-        
+
     def get_string(self, name):
         if self.has_control(name):
             return self.controls[name]
@@ -186,11 +198,14 @@ class Monad(object):
 
     def __call__(self, environ, start_response):
         inv = Invocation(environ, start_response, self.template_path)
-        if inv.path_info not in self.handlers:
-            return inv.send_not_found()
-        urlable = self.handlers[inv.path_info]
-        method = environ['REQUEST_METHOD']
         try:
+            try:
+                urlable = self.handlers[inv.path_info]
+            except KeyError:
+                raise NotFoundException()
+
+            method = environ['REQUEST_METHOD']
+        
             if method == 'GET':
                 return urlable.http_get(inv)
             elif method == 'POST':
