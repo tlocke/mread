@@ -18,6 +18,7 @@
 <select name="reminder_frequency">
 <option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
 <option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
+<option value="weekly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'weekly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'weekly' %}selected="selected"{% endifequal %}{% endif %}>Weekly</option>
 </select>
 </fieldset>
 <br/>
