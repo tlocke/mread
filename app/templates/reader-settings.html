@@ -2,7 +2,7 @@
 
 {% block title %}MtrHub &gt; Reader: {{ reader.name }} &gt; Settings{% endblock %}
 
-{% block nav %}<a href="/">MtrHub</a> &gt; <a href="/reader?reader_key={{ reader.key }}">Reader: {{ reader.name }}</a> &gt; Settings{% endblock %}
+{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/reader?reader_key={{ reader.key }}">Reader: {{ reader.name }}</a> &gt; Settings{% endblock %}
 
 {% block content %}
 {% if controls.delete %}

@@ -1,4 +1,10 @@
 body {
+	font-family: 'Crimson Text', arial, serif;;
+}
+
+#logo {
+	font-family: 'VT323', arial, serif;
+	font-size: xx-large;
 }
 
 #sign-in {

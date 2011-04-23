@@ -2,7 +2,7 @@
 
 {% block title %}MtrHub &gt; Meter: {{ meter.name }}{% endblock %}
 
-{% block nav %}<a href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
+{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
 
 {% block content %} 
 {% ifequal meter.reader.key current_reader.key %}

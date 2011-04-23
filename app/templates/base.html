@@ -5,6 +5,8 @@
 <link rel="icon" type="image/png" href="/images/icon.png">
 {% block head %}
 <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
+<link href='http://fonts.googleapis.com/css?family=VT323' rel='stylesheet' type='text/css'>
+<link href='http://fonts.googleapis.com/css?family=Crimson+Text:regular,regularitalic' rel='stylesheet' type='text/css'>
 {% endblock %}
 <title>{% block title %}{% endblock %}</title>
 <script type="text/javascript">
@@ -23,7 +25,7 @@
 </script>
 </head>
 <body>
-<p id="nav">{% block nav %}Polifesto{% endblock %}</p>
+<p id="nav">{% block nav %}MtrHub{% endblock %}</p>
 {% block login %}
 <p id="sign-in">{% if user %}
                 {% if current_reader %}
