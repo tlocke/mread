@@ -43,8 +43,8 @@ Regards,
 MtrHub.
 """)
         now = datetime.datetime.now()
-        for period in [dateutil.relativedelta.relativedelta(months=1), dateutil.relativedelta.relativedelta(weeks=1)]:
-            for meter in mread.Meter.gql("where reminder_frequency = 'monthly' and last_reminder < :1", now - period):
+        for period_text, period in [('monthly', dateutil.relativedelta.relativedelta(months=1)), ('weekly', dateutil.relativedelta.relativedelta(weeks=1))]:
+            for meter in mread.Meter.gql("where reminder_frequency = :1 and last_reminder < :1", period_text, now - period):
                 msg.initialize(to=meter.email_address)
                 msg.Send()
                 meter.last_reminder = now
