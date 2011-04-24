@@ -1,5 +1,23 @@
 body {
-	font-family: 'Crimson Text', arial, serif;;
+	font-family: 'Crimson Text', arial, serif;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+td {
+	border-style: solid;
+	border-color: silver;
+	border-width: thin;
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+th {
+	border-style: solid;
+	border-color: silver;
+	border-width: thin;
 }
 
 #logo {

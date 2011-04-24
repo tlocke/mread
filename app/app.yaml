@@ -5,10 +5,10 @@ api_version: 1
 
 handlers:
 - url: /stylesheets
-  static_dir: stylesheets
+  static_dir: static/stylesheets
   
 - url: /images
-  static_dir: images
+  static_dir: static/images
 
 - url: /cron/.*
   script: cron.py
