@@ -68,7 +68,7 @@ class Invocation():
     def _send(self, response):
         self.start_response(response, self.header_list)
         return
-        
+
     def _send_template(self, response, values):
         if 'content-type' in values:
             content_type = values['content-type']

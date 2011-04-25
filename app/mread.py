@@ -171,7 +171,7 @@ class Welcome(MonadHandler):
                     meter = Meter.gql("where reader = :1", current_reader).get()
                     fields = self.page_fields(current_reader, meter)
                     fields['message'] = 'The OpenId ' + user.nickname() + ' has been successfully associated with the reader ' + reader.name + '.'
-                    inv.send_ok(fields)
+                    return inv.send_ok(fields)
                 else:
                     e = UserException("Can't associate " + user.nickname() + " with the account " + reader.name + " because the OpenId you're signed in with doesn't match the proposed OpenId.")
                     e.values = self.page_fields(None, None)
@@ -183,16 +183,21 @@ class Welcome(MonadHandler):
                 raise e
         else:
             current_reader = Reader.get_current_reader()
+            message = None
             if current_reader is None:
                 current_reader = Reader(openids=[user.nickname()])
                 current_reader.put()
+                message = "Account created successfully."
             
             meter = Meter.gql("where reader = :1", current_reader).get()
             if meter is None:
                 meter = Meter(reader=current_reader)
                 meter.put()
-        
-            return inv.send_ok(self.page_fields(current_reader, meter))
+            
+            fields = self.page_fields(current_reader, meter)
+            if message is not None:
+                fields['message'] = message
+            return inv.send_ok(fields)
 
         
     def page_fields(self, current_reader, meter):
@@ -326,8 +331,17 @@ class ReaderSettings(MonadHandler):
             if current_reader.key() != reader.key():
                 raise ForbiddenException()
 
-            if inv.has_control('delete_openid'):
-                pass
+            if inv.has_control('remove_openid'):
+                openid = inv.get_string('openid')
+                if openid in reader.openids:
+                    reader.openids.remove(openid)
+                    reader.put()
+                    fields = self.page_fields(reader)
+                    fields['message'] = "Successfully removed OpenId."
+                    return inv.send_ok(fields)
+                else:
+                    raise UserException("That OpenId isn't associated with the reader.")
+                    
             elif inv.has_control('propose_openid'):
                 proposed_openid = inv.get_string('proposed_openid')
                 reader.proposed_openid = proposed_openid.strip()

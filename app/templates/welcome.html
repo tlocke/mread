@@ -9,7 +9,7 @@
 {% block content %}
 {% if user %}
 	{% if current_reader %}
-		<p>Your account has been successfully created. Now you can start <a href="/meter?meter_key={{ meter.key }}">adding meter readings</a>.</p>
+		<p>From here you can visit <a href="/meter?meter_key={{ meter.key }}">your meter</a>.</p>
 	{% else %}
 		{% if proposed_readers %}
 		<p>Welcome to MtrHub. You're signed in with the Openid {{ user.nickname }}. You can associate this OpenId with an existing account:
