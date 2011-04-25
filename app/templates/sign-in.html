@@ -11,5 +11,10 @@
 {% for provider in providers %}
 	<li><a href="{{ provider.url }}">{{provider.name}}</a></li>
 {% endfor %}
+    <li><form action="/_ah/login_redir">
+    <input type="hidden" name="continue" value="{{ home_url }}/welcome">
+    Open Id <input name="claimid" value="">
+    <input type="submit" value="Sign In">
+    </form></li>
 </ul>
 {% endblock %}

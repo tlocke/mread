@@ -128,7 +128,7 @@ class SignIn(MonadHandler):
     def http_get(self, inv):
         if users.get_current_user() is None:
             providers = []
-            fields = {'providers': providers}
+            fields = {'providers': providers, 'home_url': inv.home_url()}
             for url, name in {'google.com/accounts/o8/id': 'Google', 'yahoo.com': 'Yahoo', 'myspace.com': 'MySpace', 'aol.com': 'AOL', 'myopenid.com': 'MyOpenID'}.iteritems():
                 providers.append({'name': name, 'url': users.create_login_url(dest_url="/welcome", federated_identity=url)})
  
