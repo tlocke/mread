@@ -497,18 +497,6 @@ class ReadView(MonadHandler):
         minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute), 'number': minute} for minute in range(60)]
 
         return {'current_reader': current_reader, 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
-    
-    
-class MetersView(MonadHandler):
-    def http_get(self, inv):
-        meters = Meter.gql("where tags = 'public'").fetch(30)
-        fields = {'meters': meters}
-        user = users.get_current_user()
-        if user is not None:
-            fields['user'] = user
-            fields['meter'] = Meter.gql("where user = :1", user).fetch(1)
-        return inv.send_ok(fields)
-
 
 
 app = MRead()

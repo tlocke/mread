@@ -17,7 +17,7 @@
 	{% for proposed_reader in proposed_readers %}
 	<form action="/welcome" method="post">
 	<fieldset><legend>Associate this OpenId with an existing account</legend>
-	<input type="hidden" name="reader_key" value="proposed_reader.key">
+	<input type="hidden" name="reader_key" value="{{ proposed_reader.key }}">
 		<table>
 		<tr><td>Name</td><td>{{ proposed_reader.name }}</td></tr>
 		<tr><td>OpenIds</td><td><ul>{% for openid in proposed_reader.openids %}{{ openid }}{% endfor %}</ul></td>

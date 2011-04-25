@@ -109,6 +109,14 @@
 			<response-code value="200" />
 		</request>
 	</test>
+	<test name="Propose an OpenId.">
+		<request path="/reader-settings" method="post">
+			<control name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM"/>
+			<control name="proposed_openid" value="pink@example.com"/>
+			<control name="propose_openid" value="Propose OpenId"/>
+			<response-code value="200" />
+		</request>
+	</test>
 	<test name="Try admin stuff.">
 
 		<!-- Sign out -->
@@ -173,6 +181,15 @@
 
 		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgEDA">
 			<response-code value="200" />
+		</request>
+	</test>
+	<test name="Log in with proposed OpenId">
+		<request
+			path="/_ah/login?email=pink@example.com&amp;continue=http://localhost:@@test.port@@/welcome&amp;action=Login"
+			follow-redirects="true">
+			<response-code value="200" />
+			<regex
+				pattern='&lt;input type="hidden" name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM"&gt;' />
 		</request>
 	</test>
 </imprimatur>
