@@ -7,14 +7,21 @@
 {% block login %}{% endblock %}
 
 {% block content %}
-<ul>
+<div style="float: left; margin-right: 5em;">
+<p>Click on one of the icons below to sign in:</p>
+<ul style="list-style: none;">
 {% for provider in providers %}
-	<li><a href="{{ provider.url }}">{{provider.name}}</a></li>
+<li style="margin-top: 0.5em;"><a href="{{ provider.url }}" style="color: inherit; text-decoration: inherit;"><img style="width: 32px; height: 32px; vertical-align: middle;" src="/images/sign-in/{{ provider.img_name }}_32.png"> {{ provider.name }}</a></li>
 {% endfor %}
-    <li><form action="/_ah/login_redir">
-    <input type="hidden" name="continue" value="{{ home_url }}/welcome">
-    Open Id <input name="claimid" value="">
-    <input type="submit" value="Sign In">
-    </form></li>
 </ul>
+</div>
+
+<div style="float: right;">
+<p>Or type your OpenId here:</p>
+
+<form action="/sign-in">
+    <input name="openid_identifier" value="" style="background-image: url('/images/sign-in/openid-16x16.gif'); background-repeat: no-repeat; padding-left: 18px;">
+    <input type="submit" name="free-openid" value="Sign In">
+</form>
+</div>    
 {% endblock %}

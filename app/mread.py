@@ -127,14 +127,24 @@ class MRead(Monad, MonadHandler):
 class SignIn(MonadHandler):
     def http_get(self, inv):
         if users.get_current_user() is None:
-            providers = []
-            fields = {'providers': providers, 'home_url': inv.home_url()}
-            for url, name in {'google.com/accounts/o8/id': 'Google', 'yahoo.com': 'Yahoo', 'myspace.com': 'MySpace', 'aol.com': 'AOL', 'myopenid.com': 'MyOpenID'}.iteritems():
-                providers.append({'name': name, 'url': users.create_login_url(dest_url="/welcome", federated_identity=url)})
- 
-            return inv.send_ok(fields)
+            if inv.has_control('free-openid'):
+                try:
+                    openid = inv.get_string('openid_identifier')
+                except UserException, e:
+                    e.values = self.page_fields()
+                    raise e
+                    
+                return inv.send_found(users.create_login_url(dest_url="/welcome", federated_identity=openid))
+            else: 
+                return inv.send_ok(self.page_fields())
         else:
             return inv.send_found('/welcome')
+
+    def page_fields(self):
+        fields = {'providers': []}
+        for url, name, img_name in [('google.com/accounts/o8/id', 'Google', 'google'), ('yahoo.com', 'Yahoo', 'yahoo'), ('myspace.com', 'MySpace', 'myspace'), ('aol.com', 'AOL', 'aol'), ('myopenid.com', 'MyOpenID', 'myopenid'), ('twitter.com', 'Twitter', 'twitter'), ('facebook.com', 'Facebook', 'facebook'), ('linkedin.com', 'Linked-In', 'linkedin')]:
+            fields['providers'].append({'name': name, 'url': users.create_login_url(dest_url="/welcome", federated_identity=url), 'img_name': img_name})
+        return fields
 
 
 class Welcome(MonadHandler):
