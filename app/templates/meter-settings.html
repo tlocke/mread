@@ -2,20 +2,30 @@
 
 {% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Settings{% endblock %}
 
+{% block style %}
+label {
+    width:10em;
+    float:left;
+}
+{% endblock %}
+
 {% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Settings{% endblock %}
 
 {% block content %} 
 <form action="meter-settings" method="post">
 <fieldset>
 <legend>Settings</legend>
-<label>Meter Name <input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}"></label>
-<br/>
+<br>
+<fieldset>
+<label>Meter Name </label><input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}">
+</fieldset>
 <br/>
 <fieldset>
 <legend>Remind me to take a reading</legend>
 <input type="hidden" name="meter_key" value="{{ meter.key }}">
-<label>Email Address <input name="email_address" value="{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}"></label>
-<select name="reminder_frequency">
+<label>Email Address</label><input name="email_address" value="{% if controls.email_address %}{{ controls.email_address }}{% else %}{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}{% endif %}">
+<br><label>Confirm Email Address</label><input name="confirm_email_address" value="{% if controls.confirm_email_address %}{{ controls.confirm_email_address }}{% else %}{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}{% endif %}">
+<br><label>Frequency</label><select name="reminder_frequency">
 <option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
 <option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
 <option value="weekly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'weekly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'weekly' %}selected="selected"{% endifequal %}{% endif %}>Weekly</option>
@@ -24,7 +34,7 @@
 <br/>
 <fieldset>
 <legend>Sharing</legend>
-<label>Public <input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}></label>
+<label>Public</label><input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}>
 </fieldset>
 <br/>
 <input type="submit" value="Update">

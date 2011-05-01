@@ -316,8 +316,8 @@
 	<target name="test" description="Test">
 			<copy file="${test.home}/imprimatur.pre.xml" tofile="${test.home}/imprimatur.xml" />
 			<replace file="${test.home}/imprimatur.xml" token="@@test.port@@" value="${test.port}" />
-			<java jar="${javalib.home}/imprimatur-020/imprimatur.jar" fork="true" failonerror="true">
-				<arg value="${test.home}/imprimatur.xml" />
+			<java jar="/home/tlocke/workspace/imprimatur/dist/imprimatur.jar" fork="true" failonerror="true">
+				<arg value="${test.home}/imprimatur.xml" />  
 			</java>
 		</target>
 	

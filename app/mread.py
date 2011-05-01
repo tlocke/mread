@@ -305,9 +305,13 @@ class MeterSettings(MonadHandler):
             
             is_public = inv.has_control('is_public')
             email_address = inv.get_string('email_address')
+            confirm_email_address = inv.get_string('confirm_email_address')
             frequency = inv.get_string('reminder_frequency')
             name = inv.get_string('name')
 
+            email_address = email_address.strip()
+            if email_address != confirm_email_address.strip():
+                raise UserException("The email addresses don't match")
             meter.set_reminder(email_address, frequency)
             meter.is_public = is_public
             meter.name = name
