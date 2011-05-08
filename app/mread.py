@@ -85,6 +85,10 @@ class Meter(db.Model):
         self.email_address = email_address
         self.reminder_frequency = reminder_frequency
         self.put()
+        
+    def local_last_reminder(self):
+        return self.last_reminder.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.meter.time_zone))        
+
     
 class Read(db.Model, MonadHandler):
     read_date = db.DateTimeProperty(required=True)
