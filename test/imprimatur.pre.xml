@@ -161,6 +161,7 @@
 		<request path="/meter-settings" method="post">
 			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
 			<control name="name" value="House" />
+			<control name="time_zone" value="UTC"/>
 			<control name="email_address" value="None" />
 			<control name="confirm_email_address" value="None" />
 			<control name="reminder_frequency" value="never" />

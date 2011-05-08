@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 
-{% block title %}MtrHub &gt; Meter: {{ read.meter.name }} &gt; Read {{ read.read_date|date:"Y-m-d H:i" }}{% endblock %}
+{% block title %}MtrHub &gt; Meter: {{ read.meter.name }} &gt; Read {{ read.local_read_date|date:"Y-m-d H:i" }}{% endblock %}
 
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.read_date|date:"Y-m-d  H:i" }}{% endblock %}
+{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.local_read_date|date:"Y-m-d  H:i" }}{% endblock %}
 
 {% block content %} 
 {% ifequal read.meter.reader.key current_reader.key %}
 <form action="read" method="post">
 <fieldset><legend>Update Read</legend> <input type="hidden"
 	name="read_key" value="{{ read.key }}"> <input size="4"
-	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ read.read_date.year }}{% endif %}">-<select
+	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ read.local_read_date.year }}{% endif %}">-<select
 	name="read_month">
 	{% for month in months %}
-	<option value="{{ month.display }}" {% ifequal month.number read.read_date.month %}selected="selected"{% endifequal %}>{{ month.display }}</option>
+	<option value="{{ month.display }}" {% ifequal month.number read.local_read_date.month %}selected="selected"{% endifequal %}>{{ month.display }}</option>
 	{% endfor %}
 </select>-<select name="read_day">
 	{% for day in days %}
-	<option value="{{ day.display }}" {% ifequal day.number read.read_date.day %}selected="selected"{% endifequal %}>{{ day.display }}</option>
+	<option value="{{ day.display }}" {% ifequal day.number read.local_read_date.day %}selected="selected"{% endifequal %}>{{ day.display }}</option>
 	{% endfor %}
 </select> <select name="read_hour">
 	{% for hour in hours %}
-	<option value="{{ hour.display }}" {% ifequal hour.number read.read_date.hour %}selected="selected"{% endifequal %}>{{ hour.display }}</option>
+	<option value="{{ hour.display }}" {% ifequal hour.number read.local_read_date.hour %}selected="selected"{% endifequal %}>{{ hour.display }}</option>
 	{% endfor %}
 </select>:<select name="read_minute">
 	{% for minute in minutes %}
-	<option value="{{ minute.display }}" {% ifequal minute.number read.read_date.minute %}selected="selected"{% endifequal %}>{{ minute.display }}</option>
+	<option value="{{ minute.display }}" {% ifequal minute.number read.local_read_date.minute %}selected="selected"{% endifequal %}>{{ minute.display }}</option>
 	{% endfor %}
 </select> <br>
 <br>

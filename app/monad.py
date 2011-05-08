@@ -6,6 +6,7 @@ import cgi
 from wsgiref.headers import Headers
 import urlparse
 import datetime
+import pytz
 
 
 class HttpException(Exception):
@@ -169,9 +170,15 @@ class Invocation():
             raise UserException("The file field '" + name + "' is needed.")
     
     
-    def get_datetime(self, name):
+    def get_datetime(self, name, tzinfo=None):
         try:
-            return datetime.datetime(*[self.get_integer(name + "_" + suffix) for suffix in ['year', 'month', 'day', 'hour', 'minute']])
+            year = self.get_integer(name + "_year")
+            month = self.get_integer(name + "_month")
+            day = self.get_integer(name + "_day")
+            hour = self.get_integer(name + "_hour")
+            minute = self.get_integer(name + "_minute")
+            
+            return datetime.datetime(year, month, day, hour, minute, tzinfo=tzinfo).astimezone(pytz.timezone('UTC'))
         except ValueError, e:
             raise UserException(str(e))
     

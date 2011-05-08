@@ -15,6 +15,7 @@ from google.appengine.ext import db
 import datetime
 import csv
 import dateutil.relativedelta
+import pytz
 
 
 class Reader(db.Model):
@@ -64,6 +65,7 @@ class Meter(db.Model):
     last_reminder = db.DateTimeProperty()
     is_public = db.BooleanProperty(default=False, required=True)
     name = db.StringProperty(default='House', required=True)
+    time_zone = db.StringProperty(default='UTC')
     
     @staticmethod
     def get_meter(key):
@@ -72,10 +74,17 @@ class Meter(db.Model):
             raise NotFoundException()
         return meter
     
-    def set_reminder(self, email_address, reminder_frequency):
+    def update(self, name, tz_name, is_public, email_address, reminder_frequency):
+        self.name = name
+        try:
+            pytz.timezone(tz_name)
+            self.time_zone = tz_name
+        except KeyError:
+            raise UserException("Can't find the time zone " + tz_name)
+        self.is_public = is_public
         self.email_address = email_address
         self.reminder_frequency = reminder_frequency
-        
+        self.put()
     
 class Read(db.Model, MonadHandler):
     read_date = db.DateTimeProperty(required=True)
@@ -94,6 +103,8 @@ class Read(db.Model, MonadHandler):
         self.kwh = kwh
         self.put()
 
+    def local_read_date(self):
+        return self.read_date.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.meter.time_zone))        
 
 class MRead(Monad, MonadHandler):
     def __init__(self):
@@ -235,31 +246,20 @@ class MeterView(MonadHandler):
             if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
-            if inv.has_control('settings'):
-                is_public = inv.has_control('is_public')
-                email_address = inv.get_string('email_address')
-                frequency = inv.get_string('reminder_frequency')
-                meter.set_reminder(email_address, frequency)
-                meter.is_public = is_public
-                meter.put()
-                fields = self.page_fields(meter, current_reader)
-                fields['message'] = 'Settings updated successfully.'
-                return inv.send_ok(fields)
-            else:
-                read_date = inv.get_datetime("read")
-                kwh = inv.get_float("kwh")
-                read = Read(meter=meter, read_date=read_date, kwh=kwh)
-                read.put()
-                fields = self.page_fields(meter, current_reader)
-                fields['message'] = 'Read added successfully.'
-                return inv.send_ok(fields)
+            read_date = inv.get_datetime("read", pytz.timezone(meter.time_zone))
+            kwh = inv.get_float("kwh")
+            read = Read(meter=meter, read_date=read_date, kwh=kwh)
+            read.put()
+            fields = self.page_fields(meter, current_reader)
+            fields['message'] = 'Read added successfully.'
+            return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(meter, current_reader)
             raise e
 
     def page_fields(self, meter, current_reader):
         reads = Read.gql("where meter = :1 order by read_date desc", meter).fetch(30)
-        now_datetime = datetime.datetime.now()
+        now_datetime = datetime.datetime.now(pytz.timezone(meter.time_zone))
         now = {'year': now_datetime.year, 'month': '0'[len(str(now_datetime.month)) - 1:] + str(now_datetime.month), 'day': '0'[len(str(now_datetime.day)) - 1:] + str(now_datetime.day), 'hour': '0'[len(str(now_datetime.hour)) - 1:] + str(now_datetime.hour), 'minute': '0'[len(str(now_datetime.minute)) - 1:] + str(now_datetime.minute)}
         
         days = ['0'[len(str(day)) - 1:] + str(day) for day in range(1,32)]        
@@ -308,14 +308,12 @@ class MeterSettings(MonadHandler):
             confirm_email_address = inv.get_string('confirm_email_address')
             frequency = inv.get_string('reminder_frequency')
             name = inv.get_string('name')
+            time_zone = inv.get_string('time_zone')
 
             email_address = email_address.strip()
             if email_address != confirm_email_address.strip():
                 raise UserException("The email addresses don't match")
-            meter.set_reminder(email_address, frequency)
-            meter.is_public = is_public
-            meter.name = name
-            meter.put()
+            meter.update(name, time_zone, is_public, email_address, frequency)
             fields = self.page_fields(meter, current_reader)
             fields['message'] = 'Settings updated successfully.'
             return inv.send_ok(fields)
@@ -324,7 +322,7 @@ class MeterSettings(MonadHandler):
             raise e
 
     def page_fields(self, meter, current_reader):
-        return {'current_reader': current_reader, 'meter': meter}
+        return {'current_reader': current_reader, 'meter': meter, 'tzs': pytz.common_timezones}
 
 
 class ReaderSettings(MonadHandler):

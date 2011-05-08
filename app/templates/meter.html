@@ -6,6 +6,12 @@
 
 {% block content %} 
 {% ifequal meter.reader.key current_reader.key %}
+<table>
+<tr><th>Name</th><td>{{ meter.name }}</td></tr>
+<tr><th>Time Zone</th><td>{{ meter.time_zone }}</td></tr>
+<tr><th>Public?</th><td>{% if meter.is_public %}Yes{% else %}No{% endif %}</td></tr>
+</table>
+<br>
 <form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
 	name="meter_key" value="{{ meter.key }}"> <input size="4"
@@ -43,7 +49,7 @@
 {% endif %}
 {% ifequal meter.reader.key current_reader.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
-{% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder }}</li>{% endifnotequal %}
+{% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.last_reminder|date:"Y-m-d H:i" }}</li>{% endifnotequal %}
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
 {% endifequal %}
 </ul>
@@ -57,7 +63,7 @@
 	{% for read in reads %}
 	<tr>
 		<td><a href="/read?read_key={{ read.key }}">View</a></td>
-		<td>{{ read.read_date|date:"Y-m-d H:i" }}</td>
+		<td>{{ read.local_read_date|date:"Y-m-d H:i" }}</td>
 		<td>{{ read.kwh }}</td>
 	</tr>
 	{% endfor %}
