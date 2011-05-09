@@ -12,8 +12,10 @@ from google.appengine.api import mail
 from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, MonadHandler
 import datetime
-import dateutil.relativedelta
+import dateutil.rrule
 import mread
+import pytz
+import sys
 
 
 class Cron(Monad, MonadHandler):
@@ -28,8 +30,7 @@ class Cron(Monad, MonadHandler):
 
 
 class Reminders(MonadHandler):
-    def http_get(self, inv):
-        msg = mail.EmailMessage(sender="MtrHub Support <tlocke@tlocke.org.uk>",
+    msg = mail.EmailMessage(sender="MtrHub Support <tlocke@tlocke.org.uk>",
                                 subject="MtrHub: Remember to take a meter reading.",
                                 body="""
 Hi,
@@ -42,14 +43,14 @@ Regards,
 
 MtrHub.
 """)
+    
+    def http_get(self, inv):
         now = datetime.datetime.now()
-        for period_text, period in [('monthly', dateutil.relativedelta.relativedelta(months=1)), ('weekly', dateutil.relativedelta.relativedelta(weeks=1))]:
-            for meter in mread.Meter.gql("where reminder_frequency = :1 and last_reminder < :2", period_text, now - period):
-                msg.initialize(to=meter.email_address)
-                msg.Send()
-                meter.last_reminder = now
-                meter.put()
-
+        for meter in mread.Meter.gql("where next_reminder != null and next_reminder <= :1", now):
+            self.msg.to = meter.email_address
+            self.msg.Send()
+            meter.set_next_reminder()
+            meter.put()
         return inv.send_ok({})
 
 app = Cron()

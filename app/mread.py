@@ -7,7 +7,7 @@ from django.conf import settings
 try:
     settings.configure(INSTALLED_APPS=('nothing',))
 except:
-    pass 
+    pass
 from google.appengine.api import users
 from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, NotFoundException, MonadHandler, UserException, UnauthorizedException, ForbiddenException
@@ -15,7 +15,9 @@ from google.appengine.ext import db
 import datetime
 import csv
 import dateutil.relativedelta
+import dateutil.rrule
 import pytz
+import sys
 
 
 class Reader(db.Model):
@@ -58,11 +60,14 @@ class ReaderView(MonadHandler):
         return inv.send_ok({'reader': reader, 'current_reader': current_reader})
     
 
+FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
+
 class Meter(db.Model):
     reader = db.ReferenceProperty(Reader)
     email_address = db.EmailProperty()
-    reminder_frequency = db.StringProperty()
-    last_reminder = db.DateTimeProperty()
+    reminder_start = db.DateTimeProperty(default=None)
+    reminder_frequency = db.StringProperty(default='never')
+    next_reminder = db.DateTimeProperty(default=None)
     is_public = db.BooleanProperty(default=False, required=True)
     name = db.StringProperty(default='House', required=True)
     time_zone = db.StringProperty(default='UTC')
@@ -74,7 +79,7 @@ class Meter(db.Model):
             raise NotFoundException()
         return meter
     
-    def update(self, name, tz_name, is_public, email_address, reminder_frequency):
+    def update(self, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
         self.name = name
         try:
             pytz.timezone(tz_name)
@@ -83,11 +88,24 @@ class Meter(db.Model):
             raise UserException("Can't find the time zone " + tz_name)
         self.is_public = is_public
         self.email_address = email_address
+        self.reminder_start = reminder_start
         self.reminder_frequency = reminder_frequency
+        if self.reminder_frequency == 'never':
+            self.next_reminder = None
+        elif self.reminder_frequency in FREQS:
+            self.set_next_reminder()
+        else:
+            raise UserException("Reminder frequency not recognized.")
         self.put()
         
-    def local_last_reminder(self):
-        return self.last_reminder.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.meter.time_zone))        
+    def set_next_reminder(self):
+        freq = FREQS[self.reminder_frequency]
+        nrrule = dateutil.rrule.rrule(freq, dtstart=self.reminder_start)
+        self.next_reminder = nrrule.after(datetime.datetime.now(pytz.timezone('UTC'))).replace(tzinfo=pytz.timezone(self.time_zone))
+        sys.stderr.write("the next reminder is " + str(self.next_reminder))
+
+    def local_next_reminder(self):
+        return self.next_reminder.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.time_zone))
 
     
 class Read(db.Model, MonadHandler):
@@ -310,14 +328,15 @@ class MeterSettings(MonadHandler):
             is_public = inv.has_control('is_public')
             email_address = inv.get_string('email_address')
             confirm_email_address = inv.get_string('confirm_email_address')
-            frequency = inv.get_string('reminder_frequency')
+            reminder_frequency = inv.get_string('reminder_frequency')
             name = inv.get_string('name')
             time_zone = inv.get_string('time_zone')
+            reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
 
             email_address = email_address.strip()
             if email_address != confirm_email_address.strip():
                 raise UserException("The email addresses don't match")
-            meter.update(name, time_zone, is_public, email_address, frequency)
+            meter.update(name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
             fields = self.page_fields(meter, current_reader)
             fields['message'] = 'Settings updated successfully.'
             return inv.send_ok(fields)
@@ -326,7 +345,17 @@ class MeterSettings(MonadHandler):
             raise e
 
     def page_fields(self, meter, current_reader):
-        return {'current_reader': current_reader, 'meter': meter, 'tzs': pytz.common_timezones}
+        if meter.reminder_start is None:
+            reminder_start = datetime.datetime.now()
+        else:
+            reminder_start = meter.reminder_start
+        reminder_start_datetime = reminder_start.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(meter.time_zone))
+        reminder_start = {'year': reminder_start_datetime.year, 'month': '0'[len(str(reminder_start.month)) - 1:] + str(reminder_start_datetime.month), 'day': '0'[len(str(reminder_start_datetime.day)) - 1:] + str(reminder_start_datetime.day), 'hour': '0'[len(str(reminder_start_datetime.hour)) - 1:] + str(reminder_start_datetime.hour), 'minute': '0'[len(str(reminder_start_datetime.minute)) - 1:] + str(reminder_start_datetime.minute)}
+        days = ['0'[len(str(day)) - 1:] + str(day) for day in range(1,32)]
+        months = ['0'[len(str(month)) - 1:] + str(month) for month in range(1,13)]
+        hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
+        minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
+        return {'current_reader': current_reader, 'meter': meter, 'tzs': pytz.common_timezones, 'reminder_start': reminder_start, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now': reminder_start}
 
 
 class ReaderSettings(MonadHandler):

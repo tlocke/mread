@@ -49,7 +49,7 @@
 {% endif %}
 {% ifequal meter.reader.key current_reader.key %}
 <li><a href="meter-settings?meter_key={{ meter.key }}">Meter Settings</a></li>
-{% ifnotequal meter.reminder_frequency 'never' %}<li>Last reminder sent: {{ meter.local_last_reminder|date:"Y-m-d H:i" }}</li>{% endifnotequal %}
+{% if meter.reminder_frequency != 'never' %}<li>Next reminder to be sent at: {{ meter.local_next_reminder|date:"Y-m-d H:i" }}</li>{% endif %}
 <li><a href="upload?meter_key={{ meter.key }}">Upload a spreadsheet of reads</a></li>
 {% endifequal %}
 </ul>

@@ -25,8 +25,22 @@ label {
 <fieldset>
 <legend>Remind me to take a reading</legend>
 <input type="hidden" name="meter_key" value="{{ meter.key }}">
+<input type="hidden" name="reminder_start_minute" value="0">
 <label>Email Address</label><input name="email_address" value="{% if controls.email_address %}{{ controls.email_address }}{% else %}{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}{% endif %}">
 <br><label>Confirm Email Address</label><input name="confirm_email_address" value="{% if controls.confirm_email_address %}{{ controls.confirm_email_address }}{% else %}{% ifequal meter.reminder_frequency 'never' %}{{ user.email }}{% else %}{{ meter.email_address }}{% endifequal %}{% endif %}">
+<br><label>Starting</label><input size="4" maxlength="4" name="reminder_start_year" value="{% if controls.reminder_start_year %}{{ controls.reminder_start_year }}{% else %}{{ reminder_start.year }}{% endif %}">-<select name="reminder_start_month">
+	{% for month in months %}
+	<option value="{{ month }}"{% if controls.reminder_start_month %}{% if month == controls.reminder_start_month %} selected="selected"{% endif %}{% else %}{% if month == reminder_start.month %} selected="selected"{% endif %}{% endif %}>{{ month }}</option>
+	{% endfor %}
+</select>-<select name="reminder_start_day">
+	{% for day in days %}
+	<option value="{{ day }}"{% if controls.reminder_start_day %}{% if day == controls.reminder_start_day %} selected="selected"{% endif %}{% else %}{% if day == reminder_start.day %} selected="selected"{% endif %}{% endif %}>{{ day }}</option>
+	{% endfor %}
+</select> <select name="reminder_start_hour">
+	{% for hour in hours %}
+	<option value="{{ hour }}"{% if controls.reminder_start_hour %}{% if hour == controls.reminder_start_hour %} selected="selected"{% endif %}{% else %}{% if hour == reminder_start.hour %} selected="selected"{% endif %}{% endif %}>{{ hour }}</option>
+	{% endfor %}
+</select>:00
 <br><label>Frequency</label><select name="reminder_frequency">
 <option value="never" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'never' %}selected="selected"{% endifequal %}{% endif %}>Never</option>
 <option value="monthly" {% if controls.reminder_frequency %}{% ifequal controls.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% else %}{% ifequal meter.reminder_frequency 'monthly' %}selected="selected"{% endifequal %}{% endif %}>Monthly</option>
