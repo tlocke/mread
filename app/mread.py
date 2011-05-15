@@ -17,7 +17,6 @@ import csv
 import dateutil.relativedelta
 import dateutil.rrule
 import pytz
-import sys
 
 
 class Reader(db.Model):
@@ -102,7 +101,6 @@ class Meter(db.Model):
         freq = FREQS[self.reminder_frequency]
         nrrule = dateutil.rrule.rrule(freq, dtstart=self.reminder_start)
         self.next_reminder = nrrule.after(datetime.datetime.now(pytz.timezone('UTC'))).replace(tzinfo=pytz.timezone(self.time_zone))
-        sys.stderr.write("the next reminder is " + str(self.next_reminder))
 
     def local_next_reminder(self):
         return self.next_reminder.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.time_zone))
@@ -140,6 +138,16 @@ class MRead(Monad, MonadHandler):
         for meter in Meter.all():
             delattr(meter, 'editor')
             meter.put()
+        
+        for meter in Meter.all():
+            if meter.reminder_frequency not in ['never', '']:
+                meter.reminder_start = meter.last_reminder
+                meter.set_next_reminder()
+                delattr(meter, 'last_reminder')
+                meter.put()
+            else:
+                delattr(meter, 'last_reminder')
+                meter.put()
         '''    
         
     def page_fields(self, inv):

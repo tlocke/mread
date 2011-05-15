@@ -165,6 +165,11 @@
 			<control name="email_address" value="None" />
 			<control name="confirm_email_address" value="None" />
 			<control name="reminder_frequency" value="never" />
+			<control name="reminder_start_year" value="2011"/>
+			<control name="reminder_start_month" value="05"/>
+			<control name="reminder_start_day" value="01"/>
+			<control name="reminder_start_hour" value="18"/>
+			<control name="reminder_start_minute" value="30"/>
 			<control name="is_public" value="True" />
 			<response-code value="200" />
 		</request>
