@@ -177,8 +177,11 @@ class Invocation():
             day = self.get_integer(name + "_day")
             hour = self.get_integer(name + "_hour")
             minute = self.get_integer(name + "_minute")
-            
-            return datetime.datetime(year, month, day, hour, minute, tzinfo=tzinfo).astimezone(pytz.timezone('UTC'))
+            if tzinfo is None:
+                return datetime.datetime(year, month, day, hour, minute)
+            else:
+                local_dt = tzinfo.localize(datetime.datetime(year, month, day, hour, minute))
+                return pytz.utc.normalize(local_dt.astimezone(pytz.utc)).replace(tzinfo=None)
         except ValueError, e:
             raise UserException(str(e))
     

@@ -17,6 +17,7 @@ import csv
 import dateutil.relativedelta
 import dateutil.rrule
 import pytz
+import logging
 
 
 class Reader(db.Model):
@@ -61,7 +62,7 @@ class ReaderView(MonadHandler):
 
 FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
 
-class Meter(db.Model):
+class Meter(db.Expando):
     reader = db.ReferenceProperty(Reader)
     email_address = db.EmailProperty()
     reminder_start = db.DateTimeProperty(default=None)
@@ -79,6 +80,7 @@ class Meter(db.Model):
         return meter
     
     def update(self, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
+        logging.error("reminder start " + str(reminder_start))
         self.name = name
         try:
             pytz.timezone(tz_name)
@@ -97,13 +99,22 @@ class Meter(db.Model):
             raise UserException("Reminder frequency not recognized.")
         self.put()
         
+    def get_tzinfo(self):
+        return pytz.timezone(self.time_zone)
+        
     def set_next_reminder(self):
         freq = FREQS[self.reminder_frequency]
-        nrrule = dateutil.rrule.rrule(freq, dtstart=self.reminder_start)
-        self.next_reminder = nrrule.after(datetime.datetime.now(pytz.timezone('UTC'))).replace(tzinfo=pytz.timezone(self.time_zone))
+        naive_dstart = self.local_reminder_start().replace(tzinfo=None)
+        logging.error("dstart " + str(naive_dstart))
+        naive_rrule = dateutil.rrule.rrule(freq, dtstart=naive_dstart)
+        naive_now = self.get_tzinfo().normalize(pytz.utc.localize(datetime.datetime.now()).astimezone(self.get_tzinfo())).replace(tzinfo=None)
+        self.next_reminder = pytz.utc.normalize(self.get_tzinfo().localize(naive_rrule.after(naive_now)).astimezone(pytz.utc))
 
     def local_next_reminder(self):
-        return self.next_reminder.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.time_zone))
+        return self.get_tzinfo().normalize(pytz.utc.localize(self.next_reminder).astimezone(self.get_tzinfo()))
+
+    def local_reminder_start(self):
+        return self.get_tzinfo().normalize(pytz.utc.localize(self.reminder_start).astimezone(self.get_tzinfo()))
 
     
 class Read(db.Model, MonadHandler):
@@ -138,17 +149,22 @@ class MRead(Monad, MonadHandler):
         for meter in Meter.all():
             delattr(meter, 'editor')
             meter.put()
-        
+
         for meter in Meter.all():
-            if meter.reminder_frequency not in ['never', '']:
-                meter.reminder_start = meter.last_reminder
-                meter.set_next_reminder()
-                delattr(meter, 'last_reminder')
-                meter.put()
-            else:
-                delattr(meter, 'last_reminder')
-                meter.put()
-        '''    
+            try:
+                logging.debug("about to change meter " + str(meter.key()))
+                if meter.reminder_frequency not in ['never', '']:
+                    meter.reminder_start = meter.last_reminder
+                    meter.set_next_reminder()
+                    delattr(meter, 'last_reminder')
+                    meter.put()
+                else:
+                    delattr(meter, 'last_reminder')
+                    meter.put()
+                logging.debug("successfully changed " + str(meter.key()))
+            except AttributeError, e:
+                logging.debug("problem changing" + str(e))
+        '''
         
     def page_fields(self, inv):
         fields = {'meters': Meter.gql("where is_public = TRUE").fetch(30)}
@@ -276,7 +292,7 @@ class MeterView(MonadHandler):
             if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
-            read_date = inv.get_datetime("read", pytz.timezone(meter.time_zone))
+            read_date = inv.get_datetime("read", meter.get_tzinfo())
             kwh = inv.get_float("kwh")
             read = Read(meter=meter, read_date=read_date, kwh=kwh)
             read.put()
@@ -289,7 +305,7 @@ class MeterView(MonadHandler):
 
     def page_fields(self, meter, current_reader):
         reads = Read.gql("where meter = :1 order by read_date desc", meter).fetch(30)
-        now_datetime = datetime.datetime.now(pytz.timezone(meter.time_zone))
+        now_datetime = meter.get_tzinfo().localize(datetime.datetime.now())
         now = {'year': now_datetime.year, 'month': '0'[len(str(now_datetime.month)) - 1:] + str(now_datetime.month), 'day': '0'[len(str(now_datetime.day)) - 1:] + str(now_datetime.day), 'hour': '0'[len(str(now_datetime.hour)) - 1:] + str(now_datetime.hour), 'minute': '0'[len(str(now_datetime.minute)) - 1:] + str(now_datetime.minute)}
         
         days = ['0'[len(str(day)) - 1:] + str(day) for day in range(1,32)]        
