@@ -17,7 +17,6 @@ import csv
 import dateutil.relativedelta
 import dateutil.rrule
 import pytz
-import logging
 
 
 class Reader(db.Model):
@@ -80,7 +79,6 @@ class Meter(db.Expando):
         return meter
     
     def update(self, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
-        logging.error("reminder start " + str(reminder_start))
         self.name = name
         try:
             pytz.timezone(tz_name)
@@ -105,7 +103,6 @@ class Meter(db.Expando):
     def set_next_reminder(self):
         freq = FREQS[self.reminder_frequency]
         naive_dstart = self.local_reminder_start().replace(tzinfo=None)
-        logging.error("dstart " + str(naive_dstart))
         naive_rrule = dateutil.rrule.rrule(freq, dtstart=naive_dstart)
         naive_now = self.get_tzinfo().normalize(pytz.utc.localize(datetime.datetime.now()).astimezone(self.get_tzinfo())).replace(tzinfo=None)
         self.next_reminder = pytz.utc.normalize(self.get_tzinfo().localize(naive_rrule.after(naive_now)).astimezone(pytz.utc))
