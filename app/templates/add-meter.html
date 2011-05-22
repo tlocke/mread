@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Settings{% endblock %}
+{% block title %}MtrHub &gt; Add Meter{% endblock %}
 
 {% block style %}
 label {
@@ -9,26 +9,19 @@ label {
 }
 {% endblock %}
 
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Settings{% endblock %}
+{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Add Meter{% endblock %}
 
 {% block content %}
-{% if controls.delete %}
-<form action="meter-settings" method="post">
+{% if location %}
+<p>The <a href="{{ location }}">meter</a> has been successfully created.</p>
+{% else %} 
+<form action="add-meter" method="post">
 <fieldset>
-<input type="hidden" name="meter_key" value="{{ meter.key }}">
-<legend>Delete This Meter</legend>
-<p>Are you sure you want to delete this meter and all its reads?</p>
-<a href="/meter-settings?meter_key={{ meter.key }}">Cancel</a> <input type="submit" name="delete" value="Delete">
-</fieldset>
-</form>
-{% else %}
-<form action="meter-settings" method="post">
-<fieldset>
-<legend>Settings</legend>
+<legend>Add Meter</legend>
 <br>
 <fieldset>
-<label>Utility</label><select name="utility_id">{% for utility in utilities %}<option value="{{ utility.id }}" {% if controls.utility_id %}{% if controls.utility_id == utility.id %}selected="selected"{% endif %}{% else %}{% if utility_id == meter.utility_id %}selected="selected"{% endif %}{% endif %}>{{ utility.name }}</option>{% endfor %}</select>
-<br/>
+<label>Utility</label><select name="utility_id">{% for utility in utilities %}<option value="{{ utility.id }}" {% if controls.utility_id == utility.id %}selected="selected"{% endif %}>{{ utility.name }}</option>{% endfor %}</select>
+<br>
 <label>Meter Name</label><input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}">
 <br/>
 <label>Time Zone</label><select name="time_zone">{% for tz in tzs %}<option value="{{ tz }}" {% if controls.time_zone %}{% if controls.time_zone == tz %}selected="selected"{% endif %}{% else %}{% if tz == meter.time_zone %}selected="selected"{% endif %}{% endif %}>{{ tz }}</option>{% endfor %}</select>
@@ -65,15 +58,7 @@ label {
 <label>Public</label><input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}>
 </fieldset>
 <br/>
-<input type="submit" value="Update">
-</fieldset>
-</form>
-<br>
-<form action="meter-settings">
-<fieldset>
-<legend>Delete This Meter</legend>
-<input type="hidden" name="meter_key" value="{{ meter.key }}">
-<input type="submit" name="delete" value="Delete">
+<input type="submit" value="Add">
 </fieldset>
 </form>
 {% endif %}

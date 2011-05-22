@@ -19,6 +19,15 @@ import dateutil.rrule
 import pytz
 
 
+UTILITY_IDS = ['electricity', 'water', 'gas']
+
+UTILITY_DICT = {'electricity': {'id': 'electricity', 'name': 'Electricity', 'units': 'kWh'},
+                'water': {'id': 'water', 'name': 'Water', 'units': 'm3'},
+                'gas': {'id': 'gas', 'name': 'Gas', 'units': 'm3'}}
+
+UTILITY_LIST = [val for val in UTILITY_DICT.values()]
+
+
 class Reader(db.Model):
     name = db.StringProperty(required=True, default='Me')
     openids = db.StringListProperty(required=True)
@@ -70,6 +79,7 @@ class Meter(db.Expando):
     is_public = db.BooleanProperty(default=False, required=True)
     name = db.StringProperty(default='House', required=True)
     time_zone = db.StringProperty(default='UTC')
+    utility_id = db.StringProperty(default='electricity')
     
     @staticmethod
     def get_meter(key):
@@ -78,7 +88,10 @@ class Meter(db.Expando):
             raise NotFoundException()
         return meter
     
-    def update(self, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
+    def update(self, utility_id, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
+        if utility_id not in UTILITY_IDS:
+            raise UserException("That's not a valid utility id.")
+        self.utility_id = utility_id
         self.name = name
         try:
             pytz.timezone(tz_name)
@@ -113,11 +126,22 @@ class Meter(db.Expando):
     def local_reminder_start(self):
         return self.get_tzinfo().normalize(pytz.utc.localize(self.reminder_start).astimezone(self.get_tzinfo()))
 
+    def utility_name(self):
+        return UTILITY_DICT[self.utility_id]['name']
+ 
+    def utility_units(self):
+        return UTILITY_DICT[self.utility_id]['units']
     
+    def delete_meter(self):
+        for read in Read.gql("where meter = :1", self):
+            read.delete()
+        self.delete()
+        
+        
 class Read(db.Model, MonadHandler):
     read_date = db.DateTimeProperty(required=True)
     meter = db.ReferenceProperty(Meter)
-    kwh = db.FloatProperty(required=True)
+    value = db.FloatProperty(required=True)
 
     @staticmethod
     def get_read(key):
@@ -126,17 +150,18 @@ class Read(db.Model, MonadHandler):
             raise NotFoundException()
         return read
     
-    def update(self, read_date, kwh):
+    def update(self, read_date, value):
         self.read_date = read_date
-        self.kwh = kwh
+        self.value = value
         self.put()
 
     def local_read_date(self):
         return self.read_date.replace(tzinfo=pytz.timezone('UTC')).astimezone(pytz.timezone(self.meter.time_zone))        
 
+
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome(), '/export-reads': ExportReads()})
+        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome(), '/export-reads': ExportReads(), '/add-meter': AddMeter()})
         # Copy to reader
         '''
         for editor in Editor.all():
@@ -161,17 +186,21 @@ class MRead(Monad, MonadHandler):
                 logging.debug("successfully changed " + str(meter.key()))
             except AttributeError, e:
                 logging.debug("problem changing" + str(e))
+
+        for read in Read.all():
+            read.value = read.kwh
+            delattr(read, 'kwh')
+            read.put()
         '''
-        
     def page_fields(self, inv):
-        fields = {'meters': Meter.gql("where is_public = TRUE").fetch(30)}
+        fields = {'public_meters': Meter.gql("where is_public = TRUE").fetch(30)}
         
         user = users.get_current_user()
         if user is not None:
             current_reader = Reader.get_current_reader()
             if current_reader is not None:
                 fields['current_reader'] = current_reader
-                fields['meter'] = Meter.gql("where reader = :1", current_reader).get()
+                fields['meters'] = Meter.gql("where reader = :1", current_reader).fetch(10)
         return fields
 
     def http_get(self, inv):
@@ -205,11 +234,11 @@ class Welcome(MonadHandler):
     def http_get(self, inv):
         user = users.get_current_user()
         if user is None:
-            return inv.send_ok(self.page_fields(None, None))
+            return inv.send_ok(self.page_fields(None))
         else:
             current_reader = Reader.get_current_reader()
             if current_reader is None:
-                fields = self.page_fields(None, None)
+                fields = self.page_fields(None)
                 proposed_readers = Reader.gql("where proposed_openid = :1", user.nickname()).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
@@ -238,7 +267,7 @@ class Welcome(MonadHandler):
                     return inv.send_ok(fields)
                 else:
                     e = UserException("Can't associate " + user.nickname() + " with the account " + reader.name + " because the OpenId you're signed in with doesn't match the proposed OpenId.")
-                    e.values = self.page_fields(None, None)
+                    e.values = self.page_fields(None)
                     raise e
             else:
                 meter = Meter.gql("where reader = :1", current_reader).get()
@@ -247,25 +276,22 @@ class Welcome(MonadHandler):
                 raise e
         else:
             current_reader = Reader.get_current_reader()
-            message = None
             if current_reader is None:
                 current_reader = Reader(openids=[user.nickname()])
                 current_reader.put()
                 message = "Account created successfully."
+            else:
+                message = None
             
-            meter = Meter.gql("where reader = :1", current_reader).get()
-            if meter is None:
-                meter = Meter(reader=current_reader)
-                meter.put()
-            
-            fields = self.page_fields(current_reader, meter)
+            fields = self.page_fields(current_reader)
             if message is not None:
                 fields['message'] = message
             return inv.send_ok(fields)
 
         
-    def page_fields(self, current_reader, meter):
-        return {'current_reader': current_reader, 'meter': meter}
+    def page_fields(self, current_reader):
+        meters = Meter.gql("where reader = :1", current_reader)
+        return {'current_reader': current_reader, 'meters': meters}
 
     
 class MeterView(MonadHandler):
@@ -290,8 +316,8 @@ class MeterView(MonadHandler):
                 raise ForbiddenException()
             
             read_date = inv.get_datetime("read", meter.get_tzinfo())
-            kwh = inv.get_float("kwh")
-            read = Read(meter=meter, read_date=read_date, kwh=kwh)
+            value = inv.get_float("value")
+            read = Read(meter=meter, read_date=read_date, value=value)
             read.put()
             fields = self.page_fields(meter, current_reader)
             fields['message'] = 'Read added successfully.'
@@ -311,6 +337,50 @@ class MeterView(MonadHandler):
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
         return {'current_reader': current_reader, 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+
+
+class AddMeter(MonadHandler):
+    def http_get(self, inv):
+        current_reader = Reader.require_current_reader()            
+        return inv.send_ok(self.page_fields(current_reader))
+
+
+    def http_post(self, inv):
+        try:
+            current_reader = Reader.require_current_reader()
+            is_public = inv.has_control('is_public')
+            reminder_frequency = inv.get_string('reminder_frequency')
+            name = inv.get_string('name')
+            time_zone = inv.get_string('time_zone')
+            reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
+            utility_id = inv.get_string('utility_id')
+            if reminder_frequency == 'never':
+                email_address = None
+            else:
+                email_address = inv.get_string('email_address')
+                confirm_email_address = inv.get_string('confirm_email_address')
+                email_address = email_address.strip()
+                if email_address != confirm_email_address.strip():
+                    raise UserException("The email addresses don't match.")
+            
+            meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone, utility_id=utility_id)
+            meter.put()
+            meter.update(utility_id, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+            fields = self.page_fields(current_reader)
+            fields['location'] = '/meter?meter_key=' + str(meter.key())
+            return inv.send_ok(fields)
+        except UserException, e:
+            e.values = self.page_fields(current_reader)
+            raise e
+
+    def page_fields(self, current_reader):
+        reminder_start = datetime.datetime.now()
+        reminder_start = {'year': reminder_start.year, 'month': '0'[len(str(reminder_start.month)) - 1:] + str(reminder_start.month), 'day': '0'[len(str(reminder_start.day)) - 1:] + str(reminder_start.day), 'hour': '0'[len(str(reminder_start.hour)) - 1:] + str(reminder_start.hour), 'minute': '0'[len(str(reminder_start.minute)) - 1:] + str(reminder_start.minute)}
+        days = ['0'[len(str(day)) - 1:] + str(day) for day in range(1,32)]
+        months = ['0'[len(str(month)) - 1:] + str(month) for month in range(1,13)]
+        hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
+        minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
+        return {'utilities': UTILITY_LIST, 'current_reader': current_reader, 'tzs': pytz.common_timezones, 'reminder_start': reminder_start, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now': reminder_start}
 
 
 class ExportReads(MonadHandler):
@@ -346,21 +416,28 @@ class MeterSettings(MonadHandler):
             if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             
-            is_public = inv.has_control('is_public')
-            email_address = inv.get_string('email_address')
-            confirm_email_address = inv.get_string('confirm_email_address')
-            reminder_frequency = inv.get_string('reminder_frequency')
-            name = inv.get_string('name')
-            time_zone = inv.get_string('time_zone')
-            reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
+            if inv.has_control('delete'):
+                fields = self.page_fields(meter, current_reader)
+                meter.delete_meter()
+                fields['message'] = 'Meter deleted successfully.'
+                return inv.send_see_other('/')
+            else:
+                is_public = inv.has_control('is_public')
+                email_address = inv.get_string('email_address')
+                confirm_email_address = inv.get_string('confirm_email_address')
+                reminder_frequency = inv.get_string('reminder_frequency')
+                utility_id = inv.get_string('utility_id')
+                name = inv.get_string('name')
+                time_zone = inv.get_string('time_zone')
+                reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
 
-            email_address = email_address.strip()
-            if email_address != confirm_email_address.strip():
-                raise UserException("The email addresses don't match")
-            meter.update(name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
-            fields = self.page_fields(meter, current_reader)
-            fields['message'] = 'Settings updated successfully.'
-            return inv.send_ok(fields)
+                email_address = email_address.strip()
+                if email_address != confirm_email_address.strip():
+                    raise UserException("The email addresses don't match")
+                meter.update(utility_id, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+                fields = self.page_fields(meter, current_reader)
+                fields['message'] = 'Settings updated successfully.'
+                return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(meter, current_reader)
             raise e
@@ -376,7 +453,7 @@ class MeterSettings(MonadHandler):
         months = ['0'[len(str(month)) - 1:] + str(month) for month in range(1,13)]
         hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
-        return {'current_reader': current_reader, 'meter': meter, 'tzs': pytz.common_timezones, 'reminder_start': reminder_start, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now': reminder_start}
+        return {'utilities': UTILITY_LIST, 'current_reader': current_reader, 'meter': meter, 'tzs': pytz.common_timezones, 'reminder_start': reminder_start, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now': reminder_start}
 
 
 class ReaderSettings(MonadHandler):
@@ -420,9 +497,7 @@ class ReaderSettings(MonadHandler):
                 return inv.send_ok(fields)
             elif inv.has_control('delete'):
                 for meter in Meter.gql("where reader = :1", reader):
-                    for read in Read.gql("where meter = :1", meter):
-                        read.delete()
-                    meter.delete
+                    meter.delete_meter()
                 reader.delete()
                 return inv.send_found('/welcome')
             else:
@@ -470,8 +545,8 @@ class UploadView(MonadHandler):
                         read_date = datetime.datetime.strptime(row[0].strip(), '%Y-%m-%d %H:%M')
                     except ValueError, e:
                         raise UserException("Problem at line number " + str(rdr.line_num) + " of the file. The first field (the read date field) isn't formatted correctly, it should be of the form 2010-02-23T21:46. " + str(e))
-                    kwh = float(row[1].strip())
-                    read = Read(meter=meter, read_date=read_date, kwh=kwh)
+                    value = float(row[1].strip())
+                    read = Read(meter=meter, read_date=read_date, value=value)
                     read.put()
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'File imported successfully.'
@@ -504,7 +579,7 @@ class ChartView(MonadHandler):
             q_finish = last_read.read_date
         for read in Read.gql("where meter = :1 and read_date > :2 and read_date <= :3 order by read_date", meter, start_date, q_finish):
             if first_read is not None:
-                rate = (read.kwh - first_read.kwh) / self.total_seconds(read.read_date - first_read.read_date)
+                rate = (read.value - first_read.value) / self.total_seconds(read.read_date - first_read.read_date)
                 sum_kwh += rate * max(self.total_seconds(min(read.read_date, finish_date) - max(first_read.read_date, start_date)), 0)
             first_read = read
         return {'kwh': sum_kwh, 'code': code, 'start_date': start_date, 'finish_date': finish_date}
@@ -561,8 +636,8 @@ class ReadView(MonadHandler):
                 return inv.send_see_other("/meter?meter_key=" + str(meter.key()))
             else:
                 read_date = inv.get_datetime("read")
-                kwh = inv.get_float("kwh")
-                read.update(read_date, kwh)
+                value = inv.get_float("value")
+                read.update(read_date, value)
                 fields = self.page_fields(inv)
                 fields['message'] = 'Read edited successfully.'
                 return inv.send_ok(fields)

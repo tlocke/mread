@@ -7,6 +7,7 @@
 {% block content %} 
 {% ifequal meter.reader.key current_reader.key %}
 <table>
+<tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
 <tr><th>Name</th><td>{{ meter.name }}</td></tr>
 <tr><th>Time Zone</th><td>{{ meter.time_zone }}</td></tr>
 <tr><th>Public?</th><td>{% if meter.is_public %}Yes{% else %}No{% endif %}</td></tr>
@@ -33,7 +34,7 @@
 	<option value="{{ minute }}" {% ifequal minute now.minute %}selected="selected"{% endifequal %}>{{ minute }}</option>
 	{% endfor %}
 </select><br><br>
-<label><input name="kwh" value="{{ controls.kwh }}"> kWh</label><br><br><input type="submit" value="Insert"></fieldset>
+<label><input name="value" value="{{ controls.value }}"> {{ meter.utility_units }}</label><br><br><input type="submit" value="Insert"></fieldset>
 </form>
 {% endifequal %}
 <ul>
@@ -58,13 +59,13 @@
 	<tr>
 		<th>View</th>
 		<th>Date</th>
-		<th>kWh</th>
+		<th>{{ meter.utility_units }}</th>
 	</tr>
 	{% for read in reads %}
 	<tr>
 		<td><a href="/read?read_key={{ read.key }}">View</a></td>
 		<td>{{ read.local_read_date|date:"Y-m-d H:i" }}</td>
-		<td>{{ read.kwh }}</td>
+		<td>{{ read.value }}</td>
 	</tr>
 	{% endfor %}
 </table>

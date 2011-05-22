@@ -1,12 +1,20 @@
 {% extends "base.html" %}
-
 {% block title %}MtrHub{% endblock %}
 
 {% block nav %}<span id="logo">MtrHub</span>{% endblock %}
 
 {% block content%}
-
-{% if current_reader %}<p> <a href="/meter?meter_key={{ meter.key }}">Your Meter</a></p>
+{% if current_reader %}
+{% if meters %}
+<table><caption>Your Meters</caption>
+<tbody>
+{% for meter in meters %}
+<tr><td><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a></td><td>{{ meter.utility_name }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+<p> <a href="/add-meter">Add a meter</a></p>
 {% else %}
 <p>
 Welcome to MtrHub. <a href="/sign-in">Sign in</a> to start storing electricity, gas and water meter
@@ -15,7 +23,7 @@ readings for your property.
 </p>
 <table>
 <caption>Public Meters</caption>
-{% for meter in meters %}
+{% for meter in public_meters %}
 <tr>
 <td>{{ meter.reader.name }}</td><td><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a></td>
 </tr>
