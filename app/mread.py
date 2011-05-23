@@ -193,8 +193,18 @@ class MRead(Monad, MonadHandler):
             read.put()
         '''
     def page_fields(self, inv):
-        fields = {'public_meters': Meter.gql("where is_public = TRUE").fetch(30)}
+        meters = {}
+        public_reads = []
+        for read in Read.gql("order by read_date desc"):
+            meter = read.meter
+            if not meter.is_public or str(meter.key()) in meters:
+                continue
+            meters[str(meter.key())] = meter
+            public_reads.append(read)
+            if len(public_reads) > 20:
+                break
         
+        fields = {'public_reads': public_reads}  
         user = users.get_current_user()
         if user is not None:
             current_reader = Reader.get_current_reader()

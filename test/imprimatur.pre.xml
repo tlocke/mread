@@ -201,7 +201,7 @@
 		<!-- Check the details of the public meter is shown -->
 		<request path="/">
 			<regex
-				pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;[\r\n]&lt;/tr&gt;' />
+				pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;' />
 		</request>
 
 		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgEDA">
