@@ -5,13 +5,13 @@
 {% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
 
 {% block content %} 
-{% ifequal meter.reader.key current_reader.key %}
 <table>
 <tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
 <tr><th>Name</th><td>{{ meter.name }}</td></tr>
 <tr><th>Time Zone</th><td>{{ meter.time_zone }}</td></tr>
 <tr><th>Public?</th><td>{% if meter.is_public %}Yes{% else %}No{% endif %}</td></tr>
 </table>
+{% ifequal meter.reader.key current_reader.key %}
 <br>
 <form action="meter" method="post">
 <fieldset><legend>Insert Read</legend> <input type="hidden"
