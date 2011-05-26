@@ -23,20 +23,20 @@
 		<request path="/welcome" method="post">
 			<response-code value="200" />
 		</request>
-		
+
 		<!-- Add a meter -->
 		<request path="/add-meter" method="post">
 			<control name="utility_id" value="electricity" />
 			<control name="name" value="House" />
-			<control name="time_zone" value="UTC"/>
+			<control name="time_zone" value="UTC" />
 			<control name="email_address" value="None" />
 			<control name="confirm_email_address" value="None" />
 			<control name="reminder_frequency" value="never" />
-			<control name="reminder_start_year" value="2011"/>
-			<control name="reminder_start_month" value="05"/>
-			<control name="reminder_start_day" value="01"/>
-			<control name="reminder_start_hour" value="18"/>
-			<control name="reminder_start_minute" value="30"/>
+			<control name="reminder_start_year" value="2011" />
+			<control name="reminder_start_month" value="05" />
+			<control name="reminder_start_day" value="01" />
+			<control name="reminder_start_hour" value="18" />
+			<control name="reminder_start_minute" value="30" />
 			<response-code value="200" />
 		</request>
 	</test>
@@ -174,19 +174,20 @@
 			follow-redirects="true">
 			<response-code value="200" />
 		</request>
+		<!-- Also change utility to gas -->
 		<request path="/meter-settings" method="post">
 			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
-			<control name="utility_id" value="electricity" />
+			<control name="utility_id" value="gas" />
 			<control name="name" value="House" />
-			<control name="time_zone" value="UTC"/>
+			<control name="time_zone" value="UTC" />
 			<control name="email_address" value="None" />
 			<control name="confirm_email_address" value="None" />
 			<control name="reminder_frequency" value="never" />
-			<control name="reminder_start_year" value="2011"/>
-			<control name="reminder_start_month" value="05"/>
-			<control name="reminder_start_day" value="01"/>
-			<control name="reminder_start_hour" value="18"/>
-			<control name="reminder_start_minute" value="30"/>
+			<control name="reminder_start_year" value="2011" />
+			<control name="reminder_start_month" value="05" />
+			<control name="reminder_start_day" value="01" />
+			<control name="reminder_start_hour" value="18" />
+			<control name="reminder_start_minute" value="30" />
 			<control name="is_public" value="True" />
 			<response-code value="200" />
 		</request>
@@ -215,6 +216,19 @@
 			<response-code value="200" />
 			<regex
 				pattern='&lt;input type="hidden" name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM"&gt;' />
+		</request>
+
+		<request path="/welcome" method="post">
+			<control name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM" />
+			<control name="associate" value="Associate" />
+			<response-code value="200" />
+		</request>
+
+		<!-- Check that 'gas' is still displayed -->
+		<request path="/meter-settings?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+			<regex
+				pattern='&lt;option value="gas" selected="selected"&gt;Gas&lt;/option&gt;' />
+			<response-code value="200" />
 		</request>
 	</test>
 </imprimatur>

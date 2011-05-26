@@ -27,11 +27,12 @@ label {
 <legend>Settings</legend>
 <br>
 <fieldset>
-<label>Utility</label><select name="utility_id">{% for utility in utilities %}<option value="{{ utility.id }}" {% if controls.utility_id %}{% if controls.utility_id == utility.id %}selected="selected"{% endif %}{% else %}{% if utility_id == meter.utility_id %}selected="selected"{% endif %}{% endif %}>{{ utility.name }}</option>{% endfor %}</select>
+<label>Utility</label><select name="utility_id">
+{% for utility in utilities %}<option value="{{ utility.id }}"{% if controls.utility_id %}{% if controls.utility_id == utility.id %} selected="selected"{% endif %}{% else %}{% if utility.id == meter.utility_id %} selected="selected"{% endif %}{% endif %}>{{ utility.name }}</option>{% endfor %}</select>
 <br/>
 <label>Meter Name</label><input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}">
 <br/>
-<label>Time Zone</label><select name="time_zone">{% for tz in tzs %}<option value="{{ tz }}" {% if controls.time_zone %}{% if controls.time_zone == tz %}selected="selected"{% endif %}{% else %}{% if tz == meter.time_zone %}selected="selected"{% endif %}{% endif %}>{{ tz }}</option>{% endfor %}</select>
+<label>Time Zone</label><select name="time_zone">{% for tz in tzs %}<option value="{{ tz }}"{% if controls.time_zone %}{% if controls.time_zone == tz %} selected="selected"{% endif %}{% else %}{% if tz == meter.time_zone %} selected="selected"{% endif %}{% endif %}>{{ tz }}</option>{% endfor %}</select>
 </fieldset>
 <br/>
 <fieldset>

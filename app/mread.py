@@ -271,8 +271,7 @@ class Welcome(MonadHandler):
                     reader.openids.append(user.nickname())
                     reader.put()
                     current_reader = Reader.get_current_reader()
-                    meter = Meter.gql("where reader = :1", current_reader).get()
-                    fields = self.page_fields(current_reader, meter)
+                    fields = self.page_fields(current_reader)
                     fields['message'] = 'The OpenId ' + user.nickname() + ' has been successfully associated with the reader ' + reader.name + '.'
                     return inv.send_ok(fields)
                 else:
@@ -280,9 +279,8 @@ class Welcome(MonadHandler):
                     e.values = self.page_fields(None)
                     raise e
             else:
-                meter = Meter.gql("where reader = :1", current_reader).get()
                 e = UserException("The OpenId " + user.nickname() + " is already associated with an account.")
-                e.values = self.page_fields(current_reader, meter) 
+                e.values = self.page_fields(current_reader) 
                 raise e
         else:
             current_reader = Reader.get_current_reader()
