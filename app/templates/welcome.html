@@ -24,7 +24,7 @@
 	<input type="hidden" name="reader_key" value="{{ proposed_reader.key }}">
 		<table>
 		<tr><td>Name</td><td>{{ proposed_reader.name }}</td></tr>
-		<tr><td>OpenIds</td><td><ul>{% for openid in proposed_reader.openids %}{{ openid }}{% endfor %}</ul></td>
+		<tr><td>OpenIds</td><td><ul>{% for openid in proposed_reader.openids %}<li>{{ openid }}</li>{% endfor %}</ul></td>
 		</table>
 		<input type="submit" name="associate" value="Associate">
 	</fieldset>
