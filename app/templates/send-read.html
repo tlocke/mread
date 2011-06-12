@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Meter: {{ read.meter.name }} &gt; Read {{ read.local_read_date|date:"Y-m-d H:i" }} &gt; Send{% endblock %}
+
+{% block style %}
+label {
+    width: 13em;
+    float: left;
+}
+{% endblock %}
+
+{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; <a href="/read?read_key={{ read.key }}">Read {{ read.local_read_date|date:"Y-m-d  H:i" }}</a> &gt; Send{% endblock %}
+
+{% block content %}
+<form action="send-read" method="post">
+<fieldset>
+<legend>Update info for sending a read to the {{ read.meter.utility_id }} company</legend>
+<input type="hidden" name="read_key" value="{{ read.key }}">
+<br>
+<label>Email address of {{ read.meter.utility_id }} company</label><input name="send_read_to" value="{% if controls.send_read_to %}{{ controls.send_read_to }}{% else %}{% if read.meter.send_read_to %}{{ read.meter.send_read_to }}{% endif %}{% endif %}">
+<br>
+<label>Your name</label><input name="send_read_name" value="{% if controls.send_read_name %}{{ controls.send_read_name }}{% else %}{{ read.meter.send_read_name }}{% endif %}"> 
+<br>
+<label>Your email address</label><input name="send_read_reader_email" value="{% if controls.send_read_reader_email %}{{ controls.send_read_reader_email }}{% else %}{% if read.meter.send_read_reader_email %}{{ read.meter.send_read_reader_email }}{% endif %}{% endif %}"> 
+<br>
+<label>First line of address of meter</label><input name="send_read_address" value="{% if controls.send_read_address %}{{ controls.send_read_address }}{% else %}{{ read.meter.send_read_address }}{% endif %}"> 
+<br>
+<label>Postcode of meter</label><input name="send_read_postcode" value="{% if controls.send_read_postcode %}{{ controls.send_read_postcode }}{% else %}{{ read.meter.send_read_postcode }}{% endif %}"> 
+<br>
+<label>Account number</label><input name="send_read_account" value="{% if controls.send_read_account %}{{ controls.send_read_account }}{% else %}{{ read.meter.send_read_account }}{% endif %}"> 
+<br>
+<label>Meter serial number</label><input name="send_read_msn" value="{% if controls.send_read_msn %}{{ controls.send_read_msn }}{% else %}{{ read.meter.send_read_msn }}{% endif %}"> 
+<br>
+<br>
+<input type="submit" name="update" value="Update">
+</fieldset>
+</form>
+<br>
+<form action="send-read" method="post">
+<fieldset>
+<legend>Send Read To {{ read.meter.utility_name }} Company</legend>
+<input type="hidden" name="read_key" value="{{ read.key }}">
+
+<pre>
+From: MtrHub &lt;mtrhub@mtrhub.com&gt;
+To: {{ read.meter.send_read_to }}
+Cc: {{ read.meter.send_read_reader_email }}
+Subject: My {{ read.meter.utility_id }} meter reading
+
+Hi, I'd like to submit a reading for my {{ read.meter.utility_id }} meter. Details below:
+
+My Name: {{ read.meter.send_read_name }}
+My Email Address: {{ read.meter.send_read_reader_email }} 
+First Line Of Postal Address Of Meter: {{ read.meter.send_read_address }} 
+Postcode Of Meter: {{ read.meter.send_read_postcode }}
+Account Number: {{ read.meter.send_read_account }}
+Meter Serial Number: {{ read.meter.send_read_msn }}
+Read Date: {{ read.local_read_date|date:"Y-m-d H:i" }}
+Reading: {{ read.value }}
+</pre>
+<br>
+<input type="submit" name="send" value="Send">
+</fieldset>
+</form>
+{% endblock %}

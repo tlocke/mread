@@ -4,7 +4,10 @@
 
 {% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
 
-{% block content %} 
+{% block content %}
+{% if location %}
+<p>The <a href="{{ location }}">reading</a> has been successfully created.</p>
+{% else %} 
 <table>
 <tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
 <tr><th>Name</th><td>{{ meter.name }}</td></tr>
@@ -69,4 +72,5 @@
 	</tr>
 	{% endfor %}
 </table>
+{% endif %}
 {% endblock %}

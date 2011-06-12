@@ -5,40 +5,24 @@
 {% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ read.meter.key }}">Meter: {{ read.meter.name }}</a> &gt; Read {{ read.local_read_date|date:"Y-m-d  H:i" }}{% endblock %}
 
 {% block content %} 
-{% ifequal read.meter.reader.key current_reader.key %}
-<form action="read" method="post">
-<fieldset><legend>Update Read</legend> <input type="hidden"
-	name="read_key" value="{{ read.key }}"> <input size="4"
-	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ read.local_read_date.year }}{% endif %}">-<select
-	name="read_month">
-	{% for month in months %}
-	<option value="{{ month.display }}" {% ifequal month.number read.local_read_date.month %}selected="selected"{% endifequal %}>{{ month.display }}</option>
-	{% endfor %}
-</select>-<select name="read_day">
-	{% for day in days %}
-	<option value="{{ day.display }}" {% ifequal day.number read.local_read_date.day %}selected="selected"{% endifequal %}>{{ day.display }}</option>
-	{% endfor %}
-</select> <select name="read_hour">
-	{% for hour in hours %}
-	<option value="{{ hour.display }}" {% ifequal hour.number read.local_read_date.hour %}selected="selected"{% endifequal %}>{{ hour.display }}</option>
-	{% endfor %}
-</select>:<select name="read_minute">
-	{% for minute in minutes %}
-	<option value="{{ minute.display }}" {% ifequal minute.number read.local_read_date.minute %}selected="selected"{% endifequal %}>{{ minute.display }}</option>
-	{% endfor %}
-</select> <br>
-<br>
-<label>Reading <input name="value" value="{{ read.value }}"> {{ meter.utility_units }}</label> <br>
-<br>
-<input type="submit" value="Update"></fieldset>
-</form>
-<br>
-<form action="read" method="post">
-<fieldset><legend>Delete This Read</legend>
-<input type="hidden" name="read_key" value="{{ read.key }}">
-<input name="delete" type="submit" value="Delete"></fieldset>
-</form>
-{% endifequal %}
-<br>
 
+<table><caption>Meter</caption>
+<tr><th>Utility</th><td>{{ read.meter.utility_name }}</td></tr>
+<tr><th>Name</th><td>{{ read.meter.name }}</td></tr>
+<tr><th>Time Zone</th><td>{{ read.meter.time_zone }}</td></tr>
+<tr><th>Public?</th><td>{% if read.meter.is_public %}Yes{% else %}No{% endif %}</td></tr>
+<tr><th>Reader</th><td>{{ read.meter.reader.name }}</td></tr>
+</table>
+<br>
+<table><caption>Reading</caption>
+<tr><th>Date</th><td>{{ read.local_read_date|date:"Y-m-d H:i" }}</td></tr>
+<tr><th>Value</th><td>{{ read.value }}</td></tr>
+</table>
+{% ifequal read.meter.reader.key current_reader.key %}
+<br>
+<ul>
+<li><a href="/send-read?read_key={{ read.key }}">Send this read to the {{ read.meter.utility_id }} company.</a></li>
+<li><a href="/edit-read?read_key={{ read.key }}">Edit read</a></li>
+</ul>
+{% endifequal %}
 {% endblock %}

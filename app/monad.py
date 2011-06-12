@@ -190,8 +190,10 @@ class Invocation():
     
     
     def get_float(self, name):
-        return float(self.get_string(name))
-
+        try:
+            return float(self.get_string(name))
+        except ValueError:
+            raise UserException("The field '" + name + "' doesn't contain a number.")
 
 class MonadHandler(object):
     def http_get(self, inv):

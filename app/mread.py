@@ -8,7 +8,7 @@ try:
     settings.configure(INSTALLED_APPS=('nothing',))
 except:
     pass
-from google.appengine.api import users
+from google.appengine.api import users, mail
 from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, NotFoundException, MonadHandler, UserException, UnauthorizedException, ForbiddenException
 from google.appengine.ext import db
@@ -17,6 +17,7 @@ import csv
 import dateutil.relativedelta
 import dateutil.rrule
 import pytz
+import django.template
 
 
 UTILITY_IDS = ['electricity', 'water', 'gas']
@@ -70,7 +71,7 @@ class ReaderView(MonadHandler):
 
 FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
 
-class Meter(db.Expando):
+class Meter(db.Model):
     reader = db.ReferenceProperty(Reader)
     email_address = db.EmailProperty()
     reminder_start = db.DateTimeProperty(default=None)
@@ -80,6 +81,15 @@ class Meter(db.Expando):
     name = db.StringProperty(default='House', required=True)
     time_zone = db.StringProperty(default='UTC')
     utility_id = db.StringProperty(default='electricity')
+    
+    send_read_to = db.EmailProperty()
+    send_read_name = db.StringProperty(default='')
+    send_read_reader_email = db.EmailProperty()
+    send_read_address = db.StringProperty(default='')
+    send_read_postcode = db.StringProperty(default='')
+    send_read_account = db.StringProperty(default='')
+    send_read_msn = db.StringProperty(default='')
+    
     
     @staticmethod
     def get_meter(key):
@@ -161,7 +171,7 @@ class Read(db.Model, MonadHandler):
 
 class MRead(Monad, MonadHandler):
     def __init__(self):
-        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome(), '/export-reads': ExportReads(), '/add-meter': AddMeter()})
+        Monad.__init__(self, {'/': self, '/_ah/login_required': SignIn(), '/sign-in': SignIn(), '/meter': MeterView(), '/read': ReadView(), '/edit-read': EditRead(), '/send-read': SendRead(), '/upload': UploadView(), '/chart': ChartView(), '/meter-settings': MeterSettings(), '/reader': ReaderView(), '/reader-settings': ReaderSettings(), '/welcome': Welcome(), '/export-reads': ExportReads(), '/add-meter': AddMeter()})
         # Copy to reader
         '''
         for editor in Editor.all():
@@ -191,6 +201,13 @@ class MRead(Monad, MonadHandler):
             read.value = read.kwh
             delattr(read, 'kwh')
             read.put()
+        
+        for meter in Meter.all():
+            try:
+                delattr(meter, 'last_reminder')
+                meter.put()
+            except AttributeError:
+                pass
         '''
     def page_fields(self, inv):
         meters = {}
@@ -298,7 +315,7 @@ class Welcome(MonadHandler):
 
         
     def page_fields(self, current_reader):
-        meters = Meter.gql("where reader = :1", current_reader)
+        meters = Meter.gql("where reader = :1", current_reader).fetch(10)
         return {'current_reader': current_reader, 'meters': meters}
 
     
@@ -328,7 +345,7 @@ class MeterView(MonadHandler):
             read = Read(meter=meter, read_date=read_date, value=value)
             read.put()
             fields = self.page_fields(meter, current_reader)
-            fields['message'] = 'Read added successfully.'
+            fields['location'] = '/read?read_key=' + str(read.key())
             return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(meter, current_reader)
@@ -389,6 +406,62 @@ class AddMeter(MonadHandler):
         hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
         return {'utilities': UTILITY_LIST, 'current_reader': current_reader, 'tzs': pytz.common_timezones, 'reminder_start': reminder_start, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now': reminder_start}
+
+
+class SendRead(MonadHandler):
+    def http_get(self, inv):
+        current_reader = Reader.require_current_reader()
+        read_key = inv.get_string('read_key')
+        read = Read.get_read(read_key)
+        if current_reader.key() != read.meter.reader.key():
+            raise ForbiddenException()
+        return inv.send_ok(self.page_fields(current_reader, read))
+
+
+    def http_post(self, inv):
+        try:
+            current_reader = Reader.require_current_reader()
+            read_key = inv.get_string('read_key')
+            read = Read.get_read(read_key)
+            meter = read.meter
+            if current_reader.key() != meter.reader.key():
+                raise ForbiddenException()
+            if inv.has_control('update'):
+                meter.send_read_to = inv.get_string('send_read_to')
+                meter.send_read_name = inv.get_string('send_read_name') 
+                meter.send_read_reader_email = inv.get_string('send_read_reader_email')
+                meter.send_read_address = inv.get_string('send_read_address')
+                meter.send_read_postcode = inv.get_string('send_read_postcode')
+                meter.send_read_account = inv.get_string('send_read_account')
+                meter.send_read_msn = inv.get_string('send_read_msn')
+                meter.put()
+                fields = self.page_fields(current_reader, read)
+                fields['message'] = "Info updated successfully."
+                return inv.send_ok(fields)
+            else:
+                body = django.template.Template("""Hi, I'd like to submit a reading for my {{ read.meter.utility_id }} meter. Details below:
+
+My Name: {{ read.meter.send_read_name }} 
+My Email Address: {{ read.meter.send_read_reader_email }} 
+First Line Of Postal Address Of Meter: {{ read.meter.send_read_address }} 
+Postcode Of Meter: {{ read.meter.send_read_postcode }}
+Account Number: {{ read.meter.send_read_account }}
+Meter Serial Number: {{ read.meter.send_read_msn }}
+Read Date: {{ read.local_read_date|date:"Y-m-d H:i" }}
+Reading: {{ read.value }}""").render(django.template.Context({'read': read}))
+                
+                mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>", to=meter.send_read_to, cc=meter.send_read_reader_email,
+                                reply_to=meter.send_read_reader_email, subject="My " + meter.utility_id + " meter reading",
+                                body=body)
+                fields = self.page_fields(current_reader, read)
+                fields['message'] = "Reading sent successfully."
+                return inv.send_ok(fields)
+        except UserException, e:
+            e.values = self.page_fields(current_reader)
+            raise e
+    
+    def page_fields(self, current_reader, read):
+        return {'read': read, 'current_reader': current_reader}
 
 
 class ExportReads(MonadHandler):
@@ -629,6 +702,45 @@ class ReadView(MonadHandler):
         else:
             raise ForbiddenException()
 
+  
+    def http_post(self, inv):
+        try:
+            current_reader = Reader.require_current_reader()
+            read_key = inv.get_string("read_key")
+            read = Read.get_read(read_key)
+            meter = read.meter
+            if current_reader.key() != meter.reader.key():
+                raise ForbiddenException()
+            
+            if inv.has_control("delete"):
+                read.delete()
+                return inv.send_see_other("/meter?meter_key=" + str(meter.key()))
+            else:
+                read_date = inv.get_datetime("read")
+                value = inv.get_float("value")
+                read.update(read_date, value)
+                fields = self.page_fields(inv)
+                fields['message'] = 'Read edited successfully.'
+                return inv.send_ok(fields)
+        except UserException, e:
+            e.values = self.page_fields(current_reader, read)
+            raise e
+
+    def page_fields(self, current_reader, read):      
+        days = [{'display': '0'[len(str(day)) - 1:] + str(day), 'number': day} for day in range(1,32)]        
+        months = [{'display': '0'[len(str(month)) - 1:] + str(month), 'number': month} for month in range(1,13)]
+        hours = [{'display': '0'[len(str(hour)) - 1:] + str(hour), 'number': hour} for hour in range(24)]
+        minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute), 'number': minute} for minute in range(60)]
+
+        return {'current_reader': current_reader, 'read': read, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes}
+
+
+class EditRead(MonadHandler):
+    def http_get(self, inv):
+        current_reader = Reader.require_current_reader()
+        read_key = inv.get_string("read_key")
+        read = Read.get_read(read_key)
+        return inv.send_ok(self.page_fields(current_reader, read))
   
     def http_post(self, inv):
         try:

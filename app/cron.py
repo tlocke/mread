@@ -27,7 +27,7 @@ class Cron(Monad, MonadHandler):
 
 
 class Reminders(MonadHandler):
-    msg = mail.EmailMessage(sender="MtrHub Support <tlocke@tlocke.org.uk>",
+    msg = mail.EmailMessage(sender="MtrHub <mtrhub@mtrhub.com>",
                                 subject="MtrHub: Remember to take a meter reading.",
                                 body="""
 Hi,
