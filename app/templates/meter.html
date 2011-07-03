@@ -7,7 +7,7 @@
 {% block content %}
 {% if location %}
 <p>The <a href="{{ location }}">reading</a> has been successfully created.</p>
-{% else %} 
+{% endif %}
 <table>
 <tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
 <tr><th>Name</th><td>{{ meter.name }}</td></tr>
@@ -72,5 +72,4 @@
 	</tr>
 	{% endfor %}
 </table>
-{% endif %}
 {% endblock %}
