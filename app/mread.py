@@ -20,11 +20,11 @@ import pytz
 import django.template
 
 
-UTILITY_IDS = ['electricity', 'water', 'gas']
+UTILITY_DICT = {'electricity': {'id': 'electricity', 'name': 'Electricity', 'units': ['kWh']},
+                'water': {'id': 'water', 'name': 'Water', 'units': ['m3']},
+                'gas': {'id': 'gas', 'name': 'Gas', 'units': ['m3', 'ft3']}}
 
-UTILITY_DICT = {'electricity': {'id': 'electricity', 'name': 'Electricity', 'units': 'kWh'},
-                'water': {'id': 'water', 'name': 'Water', 'units': 'm3'},
-                'gas': {'id': 'gas', 'name': 'Gas', 'units': 'm3'}}
+UTILITY_IDS = UTILITY_DICT.keys()
 
 UTILITY_LIST = [val for val in UTILITY_DICT.values()]
 
@@ -81,6 +81,7 @@ class Meter(db.Model):
     name = db.StringProperty(default='House', required=True)
     time_zone = db.StringProperty(default='UTC')
     utility_id = db.StringProperty(default='electricity')
+    units = db.StringProperty()
     
     send_read_to = db.EmailProperty()
     send_read_name = db.StringProperty(default='')
@@ -98,10 +99,15 @@ class Meter(db.Model):
             raise NotFoundException()
         return meter
     
-    def update(self, utility_id, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
-        if utility_id not in UTILITY_IDS:
+    def update(self, utility_id, units, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
+        try:
+            utility = UTILITY_DICT[utility_id]
+        except KeyError:
             raise UserException("That's not a valid utility id.")
         self.utility_id = utility_id
+        if units not in utility['units']:
+            raise UserException("Those aren't valid units.")
+        self.units = units  
         self.name = name
         try:
             pytz.timezone(tz_name)
@@ -138,9 +144,6 @@ class Meter(db.Model):
 
     def utility_name(self):
         return UTILITY_DICT[self.utility_id]['name']
- 
-    def utility_units(self):
-        return UTILITY_DICT[self.utility_id]['units']
     
     def delete_meter(self):
         for read in Read.gql("where meter = :1", self):
@@ -201,14 +204,19 @@ class MRead(Monad, MonadHandler):
             read.value = read.kwh
             delattr(read, 'kwh')
             read.put()
-        
+
         for meter in Meter.all():
             try:
                 delattr(meter, 'last_reminder')
                 meter.put()
             except AttributeError:
                 pass
+        
+        for meter in Meter.all():
+            meter.units = UTILITY_DICT[meter.utility_id]['units'][0]
+            meter.put()
         '''
+
     def page_fields(self, inv):
         meters = {}
         public_reads = []
@@ -378,7 +386,7 @@ class AddMeter(MonadHandler):
             name = inv.get_string('name')
             time_zone = inv.get_string('time_zone')
             reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
-            utility_id = inv.get_string('utility_id')
+            utility_units = inv.get_string('utility_units')
             if reminder_frequency == 'never':
                 email_address = None
             else:
@@ -388,9 +396,10 @@ class AddMeter(MonadHandler):
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match.")
             
-            meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone, utility_id=utility_id)
+            meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone)
             meter.put()
-            meter.update(utility_id, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+            utility_id, units = utility_units.split('-')
+            meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
             fields = self.page_fields(current_reader)
             fields['location'] = '/meter?meter_key=' + str(meter.key())
             return inv.send_ok(fields)
@@ -448,7 +457,7 @@ Postcode Of Meter: {{ read.meter.send_read_postcode }}
 Account Number: {{ read.meter.send_read_account }}
 Meter Serial Number: {{ read.meter.send_read_msn }}
 Read Date: {{ read.local_read_date|date:"Y-m-d H:i" }}
-Reading: {{ read.value }}""").render(django.template.Context({'read': read}))
+Reading: {{ read.value }} {{ read.meter.units }}""").render(django.template.Context({'read': read}))
                 
                 mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>", to=meter.send_read_to, cc=meter.send_read_reader_email,
                                 reply_to=meter.send_read_reader_email, subject="My " + meter.utility_id + " meter reading",
@@ -507,15 +516,16 @@ class MeterSettings(MonadHandler):
                 email_address = inv.get_string('email_address')
                 confirm_email_address = inv.get_string('confirm_email_address')
                 reminder_frequency = inv.get_string('reminder_frequency')
-                utility_id = inv.get_string('utility_id')
+                utility_units = inv.get_string('utility_units')
                 name = inv.get_string('name')
                 time_zone = inv.get_string('time_zone')
                 reminder_start = inv.get_datetime("reminder_start", pytz.timezone(time_zone))
 
+                utility_id, units = utility_units.split('-')
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match")
-                meter.update(utility_id, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+                meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Settings updated successfully.'
                 return inv.send_ok(fields)

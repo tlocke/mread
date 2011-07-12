@@ -27,7 +27,7 @@
 
 		<!-- Add a meter -->
 		<request path="/add-meter" method="post">
-			<control name="utility_id" value="electricity" />
+			<control name="utility_units" value="electricity-kWh" />
 			<control name="name" value="House" />
 			<control name="time_zone" value="UTC" />
 			<control name="email_address" value="None" />
@@ -196,7 +196,7 @@
 		<!-- Also change utility to gas -->
 		<request path="/meter-settings" method="post">
 			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
-			<control name="utility_id" value="gas" />
+			<control name="utility_units" value="gas-m3" />
 			<control name="name" value="House" />
 			<control name="time_zone" value="UTC" />
 			<control name="email_address" value="None" />
@@ -246,7 +246,7 @@
 		<!-- Check that 'gas' is still displayed -->
 		<request path="/meter-settings?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
 			<regex
-				pattern='&lt;option value="gas" selected="selected"&gt;Gas&lt;/option&gt;' />
+				pattern='&lt;option value="gas-m3" selected="selected"&gt;Gas - m3&lt;/option&gt;' />
 			<response-code value="200" />
 		</request>
 	</test>

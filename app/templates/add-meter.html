@@ -20,7 +20,7 @@ label {
 <legend>Add Meter</legend>
 <br>
 <fieldset>
-<label>Utility</label><select name="utility_id">{% for utility in utilities %}<option value="{{ utility.id }}" {% if controls.utility_id == utility.id %}selected="selected"{% endif %}>{{ utility.name }}</option>{% endfor %}</select>
+<label>Utility and Units</label><select name="utility_units">{% for utility in utilities %}<optgroup label="{{ utility.name }}">{% for units in utility.units %}<option value="{{ utility.id }}-{{ units }}" {% if controls.utility == utility.id|add:units %}selected="selected"{% endif %}>{{ utility.name }} - {{ units }}</option>{% endfor %}</optgroup>{% endfor %}</select>
 <br>
 <label>Meter Name</label><input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}">
 <br/>

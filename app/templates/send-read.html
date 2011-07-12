@@ -56,7 +56,7 @@ Postcode Of Meter: {{ read.meter.send_read_postcode }}
 Account Number: {{ read.meter.send_read_account }}
 Meter Serial Number: {{ read.meter.send_read_msn }}
 Read Date: {{ read.local_read_date|date:"Y-m-d H:i" }}
-Reading: {{ read.value }}
+Reading: {{ read.value }} {{ read.meter.units }}
 </pre>
 <br>
 <input type="submit" name="send" value="Send">
