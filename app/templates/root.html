@@ -29,7 +29,7 @@ readings for your property.
 <tbody>
 {% for read in public_reads %}
 <tr>
-<td>{{ read.meter.reader.name }}</td><td><a href="/meter?meter_key={{ read.meter.key }}">{{ read.meter.name }}</a></td><td>{{ read.meter.utility_name }}</td><td>{{ read.read_date|date:"Y-m-d H:i" }}</td><td><a href="/read?read_key={{ read.key }}">{{ read.value }} {{ read.meter.utility_units}}</a></td>
+<td>{{ read.meter.reader.name }}</td><td><a href="/meter?meter_key={{ read.meter.key }}">{{ read.meter.name }}</a></td><td>{{ read.meter.utility_name }}</td><td>{{ read.read_date|date:"Y-m-d H:i" }}</td><td><a href="/read?read_key={{ read.key }}">{{ read.value }} {% for char in read.meter.units %}{% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}{% endfor %}</a></td>
 </tr>
 {% endfor %}
 </tbody>

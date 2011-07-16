@@ -10,7 +10,7 @@
 {% endif %}
 <table>
 <tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
-<tr><th>Units</th><td>{{ meter.units }}</td></tr>
+<tr><th>Units</th><td>{% for char in meter.units %}{% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}{% endfor %}</td></tr>
 <tr><th>Name</th><td>{{ meter.name }}</td></tr>
 <tr><th>Time Zone</th><td>{{ meter.time_zone }}</td></tr>
 <tr><th>Public?</th><td>{% if meter.is_public %}Yes{% else %}No{% endif %}</td></tr>
@@ -63,7 +63,7 @@
 	<tr>
 		<th>View</th>
 		<th>Date</th>
-		<th>{{ meter.utility_units }}</th>
+		<th>{% for char in meter.units %}{% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}{% endfor %}</th>
 	</tr>
 	{% for read in reads %}
 	<tr>
