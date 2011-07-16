@@ -395,7 +395,7 @@ class AddMeter(MonadHandler):
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match.")
-            
+
             meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone)
             meter.put()
             utility_id, units = utility_units.split('-')
