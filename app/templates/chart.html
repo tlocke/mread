@@ -9,7 +9,7 @@
       function drawVisualization() {
         // Create and populate the data table.
         var data = new google.visualization.DataTable();
-        var raw_data = [['Consumption', {{ data|safe }}]];
+        var raw_data = [['Consumption ({% for char in meter.units %}{% if char == '3' %}³{% else %}{{ char }}{% endif %}{% endfor %})', {{ data|safe }}]];
         
         var months = [{{ labels|safe }}];
                         
