@@ -693,7 +693,7 @@ class ChartView(MonadHandler):
             months.append(self.kwh(meter, month_start, month_finish))
         
         labels = ','.join('"' + datetime.datetime.strftime(month['start_date'], '%b %Y') + '"' for month in months)
-        data = ','.join(str(month['kwh']) for month in months)
+        data = ','.join(str(round(month['kwh'], 2)) for month in months)
         return {'current_reader': Reader.get_current_reader(), 'meter': meter, 'data': data, 'labels': labels}
 
 
