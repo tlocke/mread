@@ -1,8 +1,51 @@
 {% extends "base.html" %}
 {% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Chart{% endblock %}
+{% block head %}
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+    <script type="text/javascript">
+      function drawVisualization() {
+        // Create and populate the data table.
+        var data = new google.visualization.DataTable();
+        var raw_data = [['', {{ data|safe }}]];
+        
+        var months = [{{ labels|safe }}];
+                        
+        data.addColumn('string', 'Month');
+        for (var i = 0; i  < raw_data.length; ++i) {
+          data.addColumn('number', raw_data[i][0]);    
+        }
+        
+        data.addRows(months.length);
+      
+        for (var j = 0; j < months.length; ++j) {    
+          data.setValue(j, 0, months[j]);    
+        }
+        for (var i = 0; i  < raw_data.length; ++i) {
+          for (var j = 1; j  < raw_data[i].length; ++j) {
+            data.setValue(j-1, i+1, raw_data[i][j]);    
+          }
+        }
+        
+        // Create and draw the visualization.
+        new google.visualization.ColumnChart(document.getElementById('visualization')).
+            draw(data,
+                 {legend:"none", series: [{color: 'yellow', visibleInLegend: false}],
+                  width: 1000, height:400,
+                  hAxis: {title: "Month"},
+                  vAxis: {title: "{% for char in meter.units %}{% if char == '3' %}³{% else %}{{ char }}{% endif %}{% endfor %}"}}
+            );
+      }
+      
+
+      google.setOnLoadCallback(drawVisualization);
+    </script>
+{% endblock %}
 {% block nav %}
 <a id="logo" href="/">MtrHub</a>
 &gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Chart{% endblock %} {% block content %} 
 
-<img src="https://chart.googleapis.com/chart?cht=bvs&amp;chd=t:{{ data }}&amp;chs=1000x250&amp;chxr=0,0,{{ max_data }}|3,0,{{ max_data }}&amp;chxt=y,y,x,r,r&amp;chds=0,{{ max_data }}&amp;chxl=1:|{% for char in meter.units %}{% if char == '3' %}³{% else %}{{ char }}{% endif %}{% endfor %}|2:|{{ labels }}|4:|{% for char in meter.units %}{% if char == '3' %}³{% else %}{{ char }}{% endif %}{% endfor %}&amp;chbh=a&amp;chxp=1,50|4,50">
+<div id="visualization" style="width: 1000px; height: 400px;"></div>
 {% endblock %}

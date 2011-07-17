@@ -692,9 +692,9 @@ class ChartView(MonadHandler):
             #sys.stderr.write("month start " + str(month_start) + " month finish " + str(month_finish))
             months.append(self.kwh(meter, month_start, month_finish))
         
-        chd = [month['kwh'] for month in months]
-        labels = [datetime.datetime.strftime(month['start_date'], '%b %Y') for month in months]
-        return {'current_reader': Reader.get_current_reader(), 'meter': meter, 'months': months, 'data': ','.join(str(datum) for datum in chd), 'max_data': str(max(chd)), 'labels': '|'.join(labels)}
+        labels = ','.join('"' + datetime.datetime.strftime(month['start_date'], '%b %Y') + '"' for month in months)
+        data = ','.join(str(month['kwh']) for month in months)
+        return {'current_reader': Reader.get_current_reader(), 'meter': meter, 'data': data, 'labels': labels}
 
 
 class ReadView(MonadHandler):
