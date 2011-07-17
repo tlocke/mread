@@ -74,7 +74,7 @@ class Invocation():
         if 'content-type' in values:
             content_type = values['content-type']
         else:
-            content_type = 'text/html'
+            content_type = 'text/html; charset=utf-8'
         self.headers.add_header('Content-Type', content_type)
         
         if 'content-disposition' in values:
@@ -94,7 +94,7 @@ class Invocation():
             values['user'] = user
             values['signout_url'] = users.create_logout_url('/')
         self.start_response(response, self.header_list)
-        return [template.render(os.path.join(self.template_dir, template_name), values)]
+        return [template.render(os.path.join(self.template_dir, template_name), values).encode('utf-8')]
     
     def home_url(self):
         url = self.environ['wsgi.url_scheme']+'://'
