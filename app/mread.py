@@ -713,29 +713,6 @@ class ReadView(MonadHandler):
             raise ForbiddenException()
 
   
-    def http_post(self, inv):
-        try:
-            current_reader = Reader.require_current_reader()
-            read_key = inv.get_string("read_key")
-            read = Read.get_read(read_key)
-            meter = read.meter
-            if current_reader.key() != meter.reader.key():
-                raise ForbiddenException()
-            
-            if inv.has_control("delete"):
-                read.delete()
-                return inv.send_see_other("/meter?meter_key=" + str(meter.key()))
-            else:
-                read_date = inv.get_datetime("read")
-                value = inv.get_float("value")
-                read.update(read_date, value)
-                fields = self.page_fields(inv)
-                fields['message'] = 'Read edited successfully.'
-                return inv.send_ok(fields)
-        except UserException, e:
-            e.values = self.page_fields(current_reader, read)
-            raise e
-
     def page_fields(self, current_reader, read):      
         days = [{'display': '0'[len(str(day)) - 1:] + str(day), 'number': day} for day in range(1,32)]        
         months = [{'display': '0'[len(str(month)) - 1:] + str(month), 'number': month} for month in range(1,13)]
@@ -768,7 +745,7 @@ class EditRead(MonadHandler):
                 read_date = inv.get_datetime("read")
                 value = inv.get_float("value")
                 read.update(read_date, value)
-                fields = self.page_fields(inv)
+                fields = self.page_fields(current_reader, read)
                 fields['message'] = 'Read edited successfully.'
                 return inv.send_ok(fields)
         except UserException, e:

@@ -6,7 +6,7 @@
 
 {% block content %} 
 
-<form action="read" method="post">
+<form action="edit-read" method="post">
 <fieldset><legend>Update Read</legend> <input type="hidden"
 	name="read_key" value="{{ read.key }}"> <input size="4"
 	maxlength="4" name="read_year" value="{% if controls.read_year %}{{ controls.read_year }}{% else %}{{ read.local_read_date.year }}{% endif %}">-<select
