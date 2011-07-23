@@ -42,7 +42,7 @@
 		</request>
 	</test>
 	<test name="View the meter.">
-		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+		<request path="/meter?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<regex
 				pattern='&lt;a href="/_ah/login\?continue=http%3A//localhost%3A8081/&amp;amp;action=Logout"&gt;Sign Out&lt;/a&gt;' />
 			<regex pattern='&gt;Me&lt;' />
@@ -51,7 +51,7 @@
 		</request>
 	</test>
 	<test name="View meter settings.">
-		<request path="/meter-settings?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+		<request path="/meter-settings?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<regex pattern='&gt;Me&lt;' />
 
 			<response-code value="200" />
@@ -59,7 +59,7 @@
 	</test>
 	<test name="Insert a read.">
 		<request path="/meter" method="post">
-			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="meter_key" value="agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM" />
 			<control name="read_year" value="2011" />
 			<control name="read_month" value="02" />
 			<control name="read_day" value="13" />
@@ -70,20 +70,20 @@
 		</request>
 	</test>
 	<test name="View the read.">
-		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgDDA">
+		<request path="/read?read_key=agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYAww">
 			<response-code value="200" />
 		</request>
 	</test>
 	<test name="View the edit-read page.">
-		<request path="/edit-read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgDDA">
+		<request path="/edit-read?read_key=agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYAww">
 			<response-code value="200" />
 			<regex
-				pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;[\r\n]*&lt;input type="hidden" name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA"' />
+				pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;[\r\n]*&lt;input type="hidden" name="read_key" value="agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYAww"' />
 		</request>
 	</test>
 	<test name="Insert a read with a blank value.">
 		<request path="/meter" method="post">
-			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="meter_key" value="agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM" />
 			<control name="read_year" value="2011" />
 			<control name="read_month" value="02" />
 			<control name="read_day" value="13" />
@@ -96,7 +96,7 @@
 	</test>
 	<test name="Try inserting a read that's not a number.">
 		<request path="/meter" method="post">
-			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="meter_key" value="agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM" />
 			<control name="read_year" value="2011" />
 			<control name="read_month" value="02" />
 			<control name="read_day" value="13" />
@@ -109,14 +109,14 @@
 	</test>
 	<test name="Delete a read.">
 		<request path="/edit-read" method="post">
-			<control name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgDDA" />
+			<control name="read_key" value="agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYAww" />
 			<control name="delete" value="Delete" />
 			<response-code value="303" />
 		</request>
 	</test>
 	<test name="Insert another read.">
 		<request path="/meter" method="post">
-			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="meter_key" value="agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM" />
 			<control name="read_year" value="2011" />
 			<control name="read_month" value="02" />
 			<control name="read_day" value="15" />
@@ -127,26 +127,26 @@
 		</request>
 	</test>
 	<test name="Have a look at the upload page.">
-		<request path="/upload?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
-			<regex pattern='"/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"' />
+		<request path="/upload?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
+			<regex pattern='"/meter\?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM"' />
 			<response-code value="200" />
 		</request>
 	</test>
 	<test name="Have a look at the chart page.">
-		<request path="/chart?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+		<request path="/chart?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<regex pattern='Sign Out' />
 			<response-code value="200" />
 		</request>
 	</test>
 	<test name="Have a look at the reader.">
-		<request path="/reader?reader_key=aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM">
+		<request path="/reader?reader_key=agxkZXZ-bWV0ZXJlYWRyDAsSBlJlYWRlchgBDA">
 			<regex pattern='Sign Out' />
 			<response-code value="200" />
 		</request>
 	</test>
 	<test name="Propose an OpenId.">
 		<request path="/reader-settings" method="post">
-			<control name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM" />
+			<control name="reader_key" value="agxkZXZ-bWV0ZXJlYWRyDAsSBlJlYWRlchgBDA" />
 			<control name="proposed_openid" value="pink@example.com" />
 			<control name="propose_openid" value="Propose OpenId" />
 			<response-code value="200" />
@@ -182,7 +182,7 @@
 		</request>
 	</test>
 	<test name="Try and view the meter without being signed in">
-		<request path="/meter?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+		<request path="/meter?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<response-code value="401" />
 		</request>
 	</test>
@@ -195,7 +195,7 @@
 		</request>
 		<!-- Also change utility to gas -->
 		<request path="/meter-settings" method="post">
-			<control name="meter_key" value="aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw" />
+			<control name="meter_key" value="agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM" />
 			<control name="utility_units" value="gas-m3" />
 			<control name="name" value="House" />
 			<control name="time_zone" value="UTC" />
@@ -221,10 +221,10 @@
 		<!-- Check the details of the public meter is shown -->
 		<request path="/">
 			<regex
-				pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw"&gt;House&lt;/a&gt;&lt;/td&gt;&lt;td&gt;Gas&lt;/td&gt;&lt;td&gt;2011-02-15 18:40&lt;/td&gt;&lt;td&gt;&lt;a href="/read\?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgEDA"&gt;49.0&lt;/a&gt;&lt;/td&gt;&lt;td&gt;m&lt;sup&gt;3&lt;/sup&gt;&lt;/td&gt;' />
+				pattern='&lt;tr&gt;[\r\n]&lt;td&gt;Me&lt;/td&gt;&lt;td&gt;&lt;a href="/meter\?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM"&gt;House&lt;/a&gt;&lt;/td&gt;&lt;td&gt;Gas&lt;/td&gt;&lt;td&gt;2011-02-15 18:40&lt;/td&gt;&lt;td&gt;&lt;a href="/read\?read_key=agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYBAw"&gt;49.0&lt;/a&gt;&lt;/td&gt;&lt;td&gt;m&lt;sup&gt;3&lt;/sup&gt;&lt;/td&gt;' />
 		</request>
 
-		<request path="/read?read_key=aghtZXRlcmVhZHIKCxIEUmVhZBgEDA">
+		<request path="/read?read_key=agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYBAw">
 			<response-code value="200" />
 		</request>
 	</test>
@@ -234,17 +234,17 @@
 			follow-redirects="true">
 			<response-code value="200" />
 			<regex
-				pattern='&lt;input type="hidden" name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM"&gt;' />
+				pattern='&lt;input type="hidden" name="reader_key" value="agxkZXZ-bWV0ZXJlYWRyDAsSBlJlYWRlchgBDA"&gt;' />
 		</request>
 
 		<request path="/welcome" method="post">
-			<control name="reader_key" value="aghtZXRlcmVhZHIMCxIGUmVhZGVyGAEM" />
+			<control name="reader_key" value="agxkZXZ-bWV0ZXJlYWRyDAsSBlJlYWRlchgBDA" />
 			<control name="associate" value="Associate" />
 			<response-code value="200" />
 		</request>
 
 		<!-- Check that 'gas' is still displayed -->
-		<request path="/meter-settings?meter_key=aghtZXRlcmVhZHILCxIFTWV0ZXIYAgw">
+		<request path="/meter-settings?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<regex
 				pattern='&lt;option value="gas-m3" selected="selected"&gt;Gas - m&amp;sup3;&lt;/option&gt;' />
 			<response-code value="200" />
@@ -253,7 +253,7 @@
 	<test name="Try editing a read">
 		<request
 			path="/edit-read" method="post">
-			<control name="read_key" value="aghtZXRlcmVhZHIKCxIEUmVhZBgEDA"/>
+			<control name="read_key" value="agxkZXZ-bWV0ZXJlYWRyCgsSBFJlYWQYBAw"/>
 			<control name="read_year" value="2011"/>
 			<control name="read_month" value="07"/>
 			<control name="read_day" value="21"/>
