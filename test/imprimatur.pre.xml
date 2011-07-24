@@ -53,7 +53,7 @@
 	<test name="View meter settings.">
 		<request path="/meter-settings?meter_key=agxkZXZ-bWV0ZXJlYWRyCwsSBU1ldGVyGAIM">
 			<regex pattern='&gt;Me&lt;' />
-
+			<regex pattern='&lt;option value="electricity-kWh" selected="selected"&gt;Electricity - kWh&lt;/option&gt;'/>
 			<response-code value="200" />
 		</request>
 	</test>

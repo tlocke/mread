@@ -28,7 +28,7 @@ label {
 <br>
 <fieldset>
 <label>Utility and Units</label><select name="utility_units">
-{% for utility in utilities %}<optgroup label="{{ utility.name }}">{% for units in utility.units %}<option value="{{ utility.id }}-{{ units }}"{% if controls.utility_id %}{% if controls.utility_units == utility.id|add:units %} selected="selected"{% endif %}{% else %}{% if utility.id == meter.utility_id and units == meter.units %} selected="selected"{% endif %}{% endif %}>{{ utility.name }} - {% for char in meter.units %}{% if char == '3' %}&sup3;{% else %}{{ char }}{% endif %}{% endfor %}</option>{% endfor %}</optgroup>{% endfor %}</select>
+{% for utility in utilities %}<optgroup label="{{ utility.name }}">{% for units in utility.units %}<option value="{{ utility.id }}-{{ units }}"{% if controls.utility_id %}{% if controls.utility_units == utility.id|add:units %} selected="selected"{% endif %}{% else %}{% if utility.id == meter.utility_id and units == meter.units %} selected="selected"{% endif %}{% endif %}>{{ utility.name }} - {% for char in units %}{% if char == '3' %}&sup3;{% else %}{{ char }}{% endif %}{% endfor %}</option>{% endfor %}</optgroup>{% endfor %}</select>
 <br/>
 <label>Meter Name</label><input name="name" value="{% if controls.name %}{{ controls.name }}{% else %}{{ meter.name }}{% endif %}">
 <br/>
