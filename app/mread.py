@@ -91,7 +91,7 @@ class Meter(db.Model):
     send_read_account = db.StringProperty(default='')
     send_read_msn = db.StringProperty(default='')
 
-    latest_customer_read_date = db.DateTimeProperty(default=datetime.datetime(datetime.MINYEAR, 1, 1))
+    latest_customer_read_date = db.DateTimeProperty(default=None)
     customer_read_frequency = db.StringProperty(default='never')
     
     @staticmethod
@@ -162,8 +162,13 @@ class Meter(db.Model):
             months = 1
         else:
             months = 3
-
-        return Read.gql("where meter = :1 and read_date > :2 order by read_date desc", self, self.latest_customer_read_date + dateutil.relativedelta.relativedelta(months=months)).get()
+            
+        if self.latest_customer_read_date is None:
+            cust_date = datetime.datetime(datetime.MINYEAR, 1, 1)
+        else:
+            cust_date = self.latest_customer_read_date
+            
+        return Read.gql("where meter = :1 and read_date > :2 order by read_date desc", self, cust_date + dateutil.relativedelta.relativedelta(months=months)).get()
  
                        
 class Read(db.Model, MonadHandler):
@@ -457,18 +462,20 @@ class SendRead(MonadHandler):
             if current_reader.key() != meter.reader.key():
                 raise ForbiddenException()
             if inv.has_control('update'):
-                meter.send_read_to = inv.get_string('send_read_to')
-                meter.send_read_name = inv.get_string('send_read_name') 
-                meter.send_read_reader_email = inv.get_string('send_read_reader_email')
-                meter.send_read_address = inv.get_string('send_read_address')
-                meter.send_read_postcode = inv.get_string('send_read_postcode')
-                meter.send_read_account = inv.get_string('send_read_account')
-                meter.send_read_msn = inv.get_string('send_read_msn')
+                meter.send_read_to = inv.get_string('send_read_to').strip()
+                meter.send_read_name = inv.get_string('send_read_name').strip() 
+                meter.send_read_reader_email = inv.get_string('send_read_reader_email').strip()
+                meter.send_read_address = inv.get_string('send_read_address').strip()
+                meter.send_read_postcode = inv.get_string('send_read_postcode').strip()
+                meter.send_read_account = inv.get_string('send_read_account').strip()
+                meter.send_read_msn = inv.get_string('send_read_msn').strip()
                 meter.put()
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Info updated successfully."
                 return inv.send_ok(fields)
             else:
+                if meter.send_read_to is None or len(meter.send_read_to) == 0:
+                    raise UserException("The supplier's email address must be filled in.")
                 body = django.template.Template("""Hi, I'd like to submit a reading for my {{ read.meter.utility_id }} meter. Details below:
 
 My Name: {{ read.meter.send_read_name }} 
@@ -484,14 +491,14 @@ Reading: {{ read.value }} {{ read.meter.units }}""").render(django.template.Cont
                                 reply_to=meter.send_read_reader_email, subject="My " + meter.utility_id + " meter reading",
                                 body=body)
 
-                meter.lastest_customer_read_date = read.read_date
+                meter.latest_customer_read_date = read.read_date
                 meter.put()
                 
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Reading sent successfully."
                 return inv.send_ok(fields)
         except UserException, e:
-            e.values = self.page_fields(current_reader)
+            e.values = self.page_fields(current_reader, read)
             raise e
     
     def page_fields(self, current_reader, read):

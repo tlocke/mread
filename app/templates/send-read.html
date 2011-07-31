@@ -14,10 +14,10 @@ label {
 {% block content %}
 <form action="send-read" method="post">
 <fieldset>
-<legend>Update info for sending a read to the {{ read.meter.utility_id }} company</legend>
+<legend>Update info for sending a read to the {{ read.meter.utility_id }} supplier</legend>
 <input type="hidden" name="read_key" value="{{ read.key }}">
 <br>
-<label>Email address of {{ read.meter.utility_id }} company</label><input name="send_read_to" value="{% if controls.send_read_to %}{{ controls.send_read_to }}{% else %}{% if read.meter.send_read_to %}{{ read.meter.send_read_to }}{% endif %}{% endif %}">
+<label>Email address of {{ read.meter.utility_id }} supplier</label><input name="send_read_to" value="{% if controls.send_read_to %}{{ controls.send_read_to }}{% else %}{% if read.meter.send_read_to %}{{ read.meter.send_read_to }}{% endif %}{% endif %}">
 <br>
 <label>Your name</label><input name="send_read_name" value="{% if controls.send_read_name %}{{ controls.send_read_name }}{% else %}{{ read.meter.send_read_name }}{% endif %}"> 
 <br>
@@ -38,7 +38,7 @@ label {
 <br>
 <form action="send-read" method="post">
 <fieldset>
-<legend>Send Read To {{ read.meter.utility_name }} Company</legend>
+<legend>Send Read To {{ read.meter.utility_name }} Supplier</legend>
 <input type="hidden" name="read_key" value="{{ read.key }}">
 
 <pre>
