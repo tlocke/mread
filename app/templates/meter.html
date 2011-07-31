@@ -23,7 +23,7 @@
 {% ifequal meter.reader.key current_reader.key %}
 <br>
 <table>
-{% if meter.reminder_frequency != 'never' %}<tr><th>Date that next reminder will be sent</th><td>{{ meter.local_next_reminder|date:"Y-m-d H:i" }}</td></tr>{% endif %}
+{% if meter.reminder_frequency != 'never' %}<tr><th>Date of next reminder</th><td>{{ meter.local_next_reminder|date:"Y-m-d H:i" }}</td></tr>{% endif %}
 {% if meter.latest_customer_read_date %}<tr><th>Date of last customer read</th><td>{{ meter.latest_customer_read_date|date:"Y-m-d H:i" }}</td></tr>{% endif %}
 </table>
 <br>
