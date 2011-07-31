@@ -90,7 +90,9 @@ class Meter(db.Model):
     send_read_postcode = db.StringProperty(default='')
     send_read_account = db.StringProperty(default='')
     send_read_msn = db.StringProperty(default='')
-    
+
+    latest_customer_read_date = db.DateTimeProperty(default=datetime.datetime(datetime.MINYEAR, 1, 1))
+    customer_read_frequency = db.StringProperty(default='never')
     
     @staticmethod
     def get_meter(key):
@@ -98,8 +100,9 @@ class Meter(db.Model):
         if meter is None:
             raise NotFoundException()
         return meter
+        
     
-    def update(self, utility_id, units, name, tz_name, is_public, email_address, reminder_start, reminder_frequency):
+    def update(self, utility_id, units, name, tz_name, is_public, email_address, reminder_start, reminder_frequency, customer_read_frequency):
         try:
             utility = UTILITY_DICT[utility_id]
         except KeyError:
@@ -124,6 +127,7 @@ class Meter(db.Model):
             self.set_next_reminder()
         else:
             raise UserException("Reminder frequency not recognized.")
+        self.customer_read_frequency = customer_read_frequency
         self.put()
         
     def get_tzinfo(self):
@@ -150,7 +154,18 @@ class Meter(db.Model):
             read.delete()
         self.delete()
         
+    def candidate_customer_read(self):
+        if self.customer_read_frequency == 'never':
+            return None
         
+        if self.customer_read_frequency == 'monthly':
+            months = 1
+        else:
+            months = 3
+
+        return Read.gql("where meter = :1 and read_date > :2 order by read_date desc", self, self.latest_customer_read_date + dateutil.relativedelta.relativedelta(months=months)).get()
+ 
+                       
 class Read(db.Model, MonadHandler):
     read_date = db.DateTimeProperty(required=True)
     meter = db.ReferenceProperty(Meter)
@@ -164,6 +179,8 @@ class Read(db.Model, MonadHandler):
         return read
     
     def update(self, read_date, value):
+        if read_date > datetime.datetime.now():
+            raise UserException("The read date can't be in the future.")
         self.read_date = read_date
         self.value = value
         self.put()
@@ -220,6 +237,7 @@ class MRead(Monad, MonadHandler):
     def page_fields(self, inv):
         meters = {}
         public_reads = []
+        
         for read in Read.gql("order by read_date desc"):
             meter = read.meter
             if not meter.is_public or str(meter.key()) in meters:
@@ -235,7 +253,9 @@ class MRead(Monad, MonadHandler):
             current_reader = Reader.get_current_reader()
             if current_reader is not None:
                 fields['current_reader'] = current_reader
-                fields['meters'] = Meter.gql("where reader = :1", current_reader).fetch(10)
+                reader_meters = Meter.gql("where reader = :1", current_reader).fetch(10)
+                fields['meters'] = reader_meters
+                fields['candidate_customer_reads'] = [cand for cand in [meter.candidate_customer_read() for meter in reader_meters] if cand is not None]
         return fields
 
     def http_get(self, inv):
@@ -353,7 +373,7 @@ class MeterView(MonadHandler):
             read = Read(meter=meter, read_date=read_date, value=value)
             read.put()
             fields = self.page_fields(meter, current_reader)
-            fields['location'] = '/read?read_key=' + str(read.key())
+            fields['read'] = read.key()
             return inv.send_ok(fields)
         except UserException, e:
             e.values = self.page_fields(meter, current_reader)
@@ -369,7 +389,7 @@ class MeterView(MonadHandler):
         hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
         minutes = ['0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
 
-        return {'current_reader': current_reader, 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now}
+        return {'current_reader': current_reader, 'meter': meter, 'reads': reads, 'months': months, 'days': days, 'hours': hours, 'minutes': minutes, 'now':now, 'candidate_customer_read': meter.candidate_customer_read()}
 
 
 class AddMeter(MonadHandler):
@@ -395,11 +415,12 @@ class AddMeter(MonadHandler):
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match.")
-
-            meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone)
+            customer_read_frequency = inv.get_string('customer_read_frequency')
+            
+            meter = Meter(reader=current_reader, email_address=email_address, reminder_start=reminder_start, reminder_frequency=reminder_frequency, is_public=is_public, name=name, time_zone=time_zone, customer_read_frequency=customer_read_frequency)
             meter.put()
             utility_id, units = utility_units.split('-')
-            meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+            meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency, customer_read_frequency)
             fields = self.page_fields(current_reader)
             fields['location'] = '/meter?meter_key=' + str(meter.key())
             return inv.send_ok(fields)
@@ -462,6 +483,10 @@ Reading: {{ read.value }} {{ read.meter.units }}""").render(django.template.Cont
                 mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>", to=meter.send_read_to, cc=meter.send_read_reader_email,
                                 reply_to=meter.send_read_reader_email, subject="My " + meter.utility_id + " meter reading",
                                 body=body)
+
+                meter.lastest_customer_read_date = read.read_date
+                meter.put()
+                
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Reading sent successfully."
                 return inv.send_ok(fields)
@@ -525,7 +550,8 @@ class MeterSettings(MonadHandler):
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match")
-                meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency)
+                customer_read_frequency = inv.get_string('customer_read_frequency')
+                meter.update(utility_id, units, name, time_zone, is_public, email_address, reminder_start, reminder_frequency, customer_read_frequency)
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Settings updated successfully.'
                 return inv.send_ok(fields)

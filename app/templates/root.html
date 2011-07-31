@@ -5,6 +5,14 @@
 
 {% block content%}
 {% if current_reader %}
+	{% if candidate_customer_reads %}
+		<ul>
+		{% for cand in candidate_customer_reads %}
+		<li><strong>Customer Read Prompt:</strong> The supplier hasn't been sent a read from the {{ cand.meter.utility_id }} meter {{ cand.meter.name }} for a while. You could <a href="/send-read?read_key={{ cand.key }}">send the latest read to the supplier</a>.</li>
+		{% endfor %}
+		</ul>
+	{% endif %}
+
 {% if meters %}
 <table><caption>Your Meters</caption>
 <tbody>

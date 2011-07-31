@@ -5,9 +5,14 @@
 {% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}{% endblock %}
 
 {% block content %}
-{% if location %}
-<p>The <a href="{{ location }}">reading</a> has been successfully created.</p>
+{% if read %}
+<p>The <a href="/read?read_key={{ read.key }}">reading</a> has been successfully created.</p>
 {% endif %}
+
+{% if candidate_customer_read %}
+<p><strong>Customer Read Prompt:</strong> The supplier hasn't been sent a read from this meter for a while. You could <a href="/send-read?read_key={{ candidate_customer_read.key }}">send the latest read to the supplier</a>.</p>
+	{% endif %}
+
 <table>
 <tr><th>Utility</th><td>{{ meter.utility_name }}</td></tr>
 <tr><th>Units</th><td>{% for char in meter.units %}{% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}{% endfor %}</td></tr>

@@ -57,6 +57,15 @@ label {
 </fieldset>
 <br/>
 <fieldset>
+<legend>Prompt to send read to supplier</legend>
+<br><label>Frequency</label><select style='float: left;' name="customer_read_frequency">
+<option value="never" {% if controls.customer_read_frequency %}{% if controls.customer_read_frequency == 'never' %}selected="selected"{% endif %}{% else %}{% if meter.customer_read_frequency == 'never' %}selected="selected"{% endif %}{% endif %}>Never</option>
+<option value="quarterly" {% if controls.customer_read_frequency %}{% if controls.customer_read_frequency == 'quarterly' %}selected="selected"{% endif %}{% else %}{% if meter.customer_read_frequency == 'quarterly' %}selected="selected"{% endif %}{% endif %}>Quarterly</option>
+<option value="monthly" {% if controls.customer_read_frequency %}{% if controls.customer_read_frequency == 'monthly' %}selected="selected"{% endif %}{% else %}{% if meter.customer_read_frequency == 'monthly' %}selected="selected"{% endif %}{% endif %}>Monthly</option>
+</select>
+</fieldset>
+<br/>
+<fieldset>
 <legend>Sharing</legend>
 <label>Public</label><input type="checkbox" name="is_public" value="True" {% if controls.settings %}{% if controls.is_public %}checked="checked"{% endif %}{% else %}{% if meter.is_public %}checked="checked"{% endif %}{% endif %}>
 </fieldset>
