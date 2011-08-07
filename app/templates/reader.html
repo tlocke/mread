@@ -26,6 +26,16 @@
 	{% endfor %}
 	</ul>
 	</td>
+</tr>
+<tr><td>Meters</td>
+<td>
+<ul>
+{% for meter in meters %}
+<li><a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a> ({{ meter.utility_id }})</li>
+{% endfor %}
+</ul>
+</td>
+</tr>
 </table>
 
 {% ifequal current_reader.key reader.key %}

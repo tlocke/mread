@@ -66,7 +66,8 @@ class ReaderView(MonadHandler):
         if current_reader.key() != reader.key():
             raise ForbiddenException()
 
-        return inv.send_ok({'reader': reader, 'current_reader': current_reader})
+        return inv.send_ok({'reader': reader, 'current_reader': current_reader,
+                            'meters': Meter.gql("where reader = :1", current_reader).fetch(10)})
     
 
 FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
