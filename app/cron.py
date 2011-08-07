@@ -13,6 +13,7 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from monad import Monad, MonadHandler
 import datetime
 import mread
+import django.template
 
 
 class Cron(Monad, MonadHandler):
@@ -26,26 +27,23 @@ class Cron(Monad, MonadHandler):
         return inv.send_ok(self.page_fields(inv))
 
 
-class Reminders(MonadHandler):
-    msg = mail.EmailMessage(sender="MtrHub <mtrhub@mtrhub.com>",
-                                subject="MtrHub: Remember to take a meter reading.",
-                                body="""
+class Reminders(MonadHandler):    
+    def http_get(self, inv):
+        now = datetime.datetime.now()
+        for meter in mread.Meter.gql("where next_reminder != null and next_reminder <= :1", now):
+            body=django.template.Template("""
 Hi,
 
-This is a reminder from MtrHub to read your meter. To change the settings, log in to:
+This is a reminder from MtrHub to read your {{ meter.utility.id }} meter {{ meter.name }}. To change the settings, log in to:
 
 http://www.mtrhub.com/
 
 Regards,
 
 MtrHub.
-""")
-    
-    def http_get(self, inv):
-        now = datetime.datetime.now()
-        for meter in mread.Meter.gql("where next_reminder != null and next_reminder <= :1", now):
-            self.msg.to = meter.email_address
-            self.msg.Send()
+""").render(django.template.Context({'meter': meter}))
+            mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>", to=meter.email_address,
+                           subject="MtrHub: Remember to take a meter reading.", body=body)
             meter.set_next_reminder()
             meter.put()
         return inv.send_ok({})
