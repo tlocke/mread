@@ -1,3 +1,5 @@
 venv/*
 *.pyc
 *.swp
+pid_file
+app/six.py

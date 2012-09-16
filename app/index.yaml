@@ -10,17 +10,6 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
-- kind: Meter
-  properties:
-  - name: reminder_frequency
-  - name: last_reminder
-
-- kind: Policy
-  properties:
-  - name: tags
-  - name: rating
-    direction: desc
-
 - kind: Read
   properties:
   - name: meter
