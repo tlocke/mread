@@ -286,7 +286,7 @@ class SignIn(MonadHandler):
 
     def page_fields(self):
         fields = {'providers': []}
-        for url, name, img_name in [('google.com/accounts/o8/id', 'Google', 'google'), ('yahoo.com', 'Yahoo', 'yahoo'), ('myspace.com', 'MySpace', 'myspace'), ('aol.com', 'AOL', 'aol'), ('myopenid.com', 'MyOpenID', 'myopenid')]:
+        for url, name, img_name in [('https://www.google.com/accounts/o8/id', 'Google', 'google'), ('yahoo.com', 'Yahoo', 'yahoo'), ('myspace.com', 'MySpace', 'myspace'), ('aol.com', 'AOL', 'aol'), ('myopenid.com', 'MyOpenID', 'myopenid')]:
             fields['providers'].append({'name': name, 'url': users.create_login_url(dest_url="/welcome", federated_identity=url), 'img_name': img_name})
         return fields
 
