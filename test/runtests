@@ -1,6 +1,13 @@
+cd ../app
+if ! pyflakes mread.py; then
+	exit
+fi
+if ! pep8 mread.py; then
+	exit
+fi
 cd ..
 ./stopserver
-./runserver
+./startserver
 until curl --silent http://localhost:8080/ > /dev/null
 do
 	sleep 1

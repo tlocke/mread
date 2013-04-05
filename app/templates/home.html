@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub{% endblock %}
+
+{% block nav %}<span id="logo">MtrHub</span>{% endblock %}
+
+{% block content%}
+  {% if current_reader %}
+    {% if candidate_customer_reads %}
+      <ul>
+        {% for cand in candidate_customer_reads %}
+          <li>
+            <strong>Customer Read Prompt:</strong> The supplier hasn't been
+            sent a read from the {{ cand.meter.utility_id }} meter
+            {{ cand.meter.name }} for a while. You could
+            <a href="/send_read?read_key={{ cand.key }}">send the latest read
+            to the supplier</a>.
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if meters %}
+      <table><caption>Your Meters</caption>
+        <tbody>
+          {% for meter in meters %}
+            <tr>
+              <td>
+                <a href="/view_meter?meter_key={{ meter.key() }}">{{ meter.name }}</a>
+              </td>
+              <td>{{ meter.utility_name() }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <p><a href="/add_meter">Add a meter</a></p>
+  {% else %}
+    <p>
+      Welcome to MtrHub. <a href="/sign_in">Sign in</a> to start storing
+      electricity, gas and water meter readings for your property.
+    </p>
+  {% endif %}
+
+  <table>
+    <caption>Latest Public Reads</caption>
+    <thead>
+      <tr>
+        <th>Reader</th>
+        <th>Meter</th>
+        <th>Utility</th>
+        <th>Time Of Read</th>
+        <th>Reading</th>
+        <th>Units</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for read in public_reads %}
+        <tr>
+          <td>{{ read.meter.reader.name }}</td>
+          <td>
+            <a href="/meter?meter_key={{ read.meter.key }}">{{ read.meter.name }}</a>
+          </td>
+          <td>{{ read.meter.utility_name }}</td>
+          <td>{{ read.read_date.strftime("%Y-%m-%d %H:%i") }}</td>
+          <td><a href="/read?read_key={{ read.key }}">{{ read.value }}</a></td>
+          <td>
+            {% for char in read.meter.units %}
+              {% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

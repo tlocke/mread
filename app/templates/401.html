@@ -2,14 +2,17 @@
 
 {% block title %}MtrHub &gt; Sign In Needed{% endblock %}
 
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Sign In Needed{% endblock %}
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt; Sign In Needed
+{% endblock %}
 
 {% block content%}
+  <p>Ah. You need to <a href="/sign_in">sign in</a> to see that page.</p>
 
-<p>Ah. You need to <a href="/sign-in">sign in</a> to see that page.</p>
-
-<p>Most things on MtrHub can be made public by going to the settings page
-and ticking the 'public' check-box, then people don't have to sign in to see it. If things are
-private (the default) then you have to sign in, and you only get to see the page if you own the
-meter etc.</p>
+  <p>
+    Most things on MtrHub can be made public by going to the settings page
+    and ticking the 'public' check-box, then people don't have to sign in to
+    see it. If things are private (the default) then you have to sign in, and
+    you only get to see the page if you own the meter etc.
+  </p>
 {% endblock %}

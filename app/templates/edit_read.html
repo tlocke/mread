@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}
+  MtrHub &gt; Meter: {{ read.meter.name }} &gt;
+  Read {{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}
+{% endblock %}
+
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt;
+  <a href="/view_meter?meter_key={{ read.meter.key() }}">Meter: 
+  {{ read.meter.name }}</a> &gt;
+  <a href="/view_read?read_key={{ read.key() }}">Read
+  {{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}</a> &gt; Edit
+{% endblock %}
+
+{% block content %} 
+  <form action="edit-read" method="post">
+    <fieldset><legend>Update Read</legend>
+      <input type="hidden" name="read_key" value="{{ read.key() }}">
+      {{ input_date('read', request, read.local_read_date()) }}
+      <br><br>
+      <label>Reading 
+        <input name="value" value="{{ read.value }}">
+        {{ read.meter.utility_units }}
+      </label><br>
+      <br>
+      <input type="submit" value="Update">
+      </fieldset>
+  </form>
+  <br>
+  <form action="read" method="post">
+    <fieldset>
+      <legend>Delete This Read</legend>
+      <input type="hidden" name="read_key" value="{{ read.key() }}">
+      <input name="delete" type="submit" value="Delete">
+    </fieldset>
+  </form>
+  <br>
+{% endblock %}

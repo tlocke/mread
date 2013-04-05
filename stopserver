@@ -1,1 +1,5 @@
-kill $(cat pid_file)
+pkill -f google_appengine
+while pgrep -f google_appengine
+do
+	sleep 1
+done

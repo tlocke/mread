@@ -1,13 +1,18 @@
 {% extends "base.html" %}
+
 {% block title %}MtrHub &gt; Page Not Found{% endblock %}
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Page Not Found{% endblock %}
+
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt; Page Not Found
+{% endblock %}
 
 {% block content%}
-<p>
-{% if message %}
-{{ message }}
-{% else %}
-Hmm, can't find that page. You could visit the <a href="/">home page</a>, that should work.
-{% endif %}
-</p>
+  <p>
+    {% if message %}
+      {{ message }}
+    {% else %}
+      Hmm, can't find that page. You could visit the <a href="/">home page</a>,
+      that should work.
+    {% endif %}
+  </p>
 {% endblock %}

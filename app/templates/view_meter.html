@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Meter: {{ meter.name }}{% endblock %}
+
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}
+{% endblock %}
+
+{% block content %}
+  {% if read %}
+  <p>The <a href="/read?read_key={{ read.key }}">reading</a> has been successfully created.</p>
+  {% endif %}
+
+  {% if candidate_customer_read %}
+  <p><strong>Customer Read Prompt:</strong> The supplier hasn't been sent a read from this meter for a while. You could <a href="/send-read?read_key={{ candidate_customer_read.key }}">send the latest read to the supplier</a>.</p>
+          {% endif %}
+
+  <table>
+    <tr>
+      <th>Utility</th>
+      <td>{{ meter.utility_name() }}</td>
+    </tr>
+    <tr>
+      <th>Units</th>
+      <td>
+        {%- for char in meter.units -%}
+          {%- if char == '3' -%}
+            <sup>3</sup>
+          {%- else -%}
+            {{ char }}
+          {%- endif -%}
+        {%- endfor -%}
+      </td>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <td>{{ meter.name }}</td>
+    </tr>
+    <tr>
+      <th>Time Zone</th>
+      <td>{{ meter.time_zone }}</td>
+    </tr>
+    <tr>
+      <th>Public?</th>
+      <td>
+        {% if meter.is_public %}
+          Yes
+        {% else %}
+          No
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+
+  {% if meter.reader.key() == current_reader.key() %}
+    <br>
+    <table>
+      {% if meter.reminder_frequency != 'never' %}
+        <tr>
+          <th>Date of next reminder</th>
+          <td>{{ meter.local_next_reminder.strftime("%Y-%m-%d %H:%i") }}</td>
+        </tr>
+      {% endif %}
+      {% if meter.latest_customer_read_date %}
+        <tr>
+          <th>Date of last customer read</th>
+          <td>
+            {{ meter.latest_customer_read_date.strftime("%Y-%m-%d %H:%i") }}
+          </td>
+        </tr>
+      {% endif %}
+    </table>
+    <br>
+    <form action="meter" method="post">
+      <fieldset>
+        <legend>Insert Read</legend>
+        <input type="hidden" name="meter_key" value="{{ meter.key }}">
+        {{ input_date('read', request, now) }}
+        <br><br>
+        <label>
+          <input name="value" value="{{ request.POST.value }}">
+          {{ meter.utility_units }}
+        </label>
+        <br><br>
+        <input type="submit" value="Insert">
+      </fieldset>
+    </form>
+  {% endif %}
+
+  <ul>
+    <li>
+      {% if reads|length > 1 %}
+        <a href="chart?meter_key={{ meter.key() }}">Chart of last 12 months</a>
+      {% else %}
+        Once there are two or more reads, you'll be able to see a chart of the
+        electricity consumption.
+      {% endif %}
+    </li>
+    {% if reads|length > 0 %}
+      <li>
+        <a href="/export_reads?meter_key={{ meter.key() }}">Export reads as a CSV file</a>
+      </li>
+    {% endif %}
+    {% if meter.reader.key() == current_reader.key() %}
+      <li>
+        <a href="/meter_settings?meter_key={{ meter.key() }}">Meter Settings</a>
+      </li>
+      <li>
+        <a href="upload?meter_key={{ meter.key() }}">Upload a spreadsheet of reads</a>
+      </li>
+    {% endif %}
+  </ul>
+  <table>
+    <caption>Reads</caption>
+    <tr>
+      <th>View</th>
+      <th>Date</th>
+      <th>
+        {% for char in meter.units %}
+          {% if char == '3' %}
+            <sup>3</sup>
+          {% else %}
+            {{ char }}
+          {% endif %}
+        {% endfor %}
+      </th>
+    </tr>
+    {% for read in reads %}
+      <tr>
+        <td><a href="/view_read?read_key={{ read.key() }}">View</a></td>
+        <td>{{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}</td>
+        <td>{{ read.value }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

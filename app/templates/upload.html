@@ -1,23 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Bulk Upload{% endblock %}
+{% block title %}
+  MtrHub &gt; Meter: {{ meter.name }} &gt; Bulk Upload
+{% endblock %}
 
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Bulk Upload{% endblock %}
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt;
+  <a href="/view_meter?meter_key={{ meter.key() }}">Meter:
+  {{ meter.name }}</a> &gt; Bulk Upload
+{% endblock %}
 
 {% block content %}
-<form action="upload" method="post" enctype="multipart/form-data">
-<fieldset><legend>Upload <a href="http://en.wikipedia.org/wiki/Comma-separated_values">CSV</a> Spreadsheet Of Reads</legend>
-<p>Example:</p>
-<pre>
-2010-02-03 00:00, 14311
-2010-08-10 00:00, 17555
-2010-09-23 20:24, 17835
-2010-09-24 22:20, 17842
-2010-09-26 13:25, 17849
-</pre>
-<br/>
-<input type="hidden" name="meter_key" value="{{ meter.key }}">
-<input name="spreadsheet" type="file"> <input type="submit" value="Upload">
-</fieldset>
-</form>
+  <form action="/upload" method="post" enctype="multipart/form-data">
+    <fieldset>
+      <legend>
+        Upload
+        <a href="http://en.wikipedia.org/wiki/Comma-separated_values">CSV</a>
+        Spreadsheet Of Reads
+      </legend>
+      <p>Example:</p>
+      <pre>
+        2010-02-03 00:00, 14311
+        2010-08-10 00:00, 17555
+        2010-09-23 20:24, 17835
+        2010-09-24 22:20, 17842
+        2010-09-26 13:25, 17849
+      </pre>
+      <br/>
+      <input type="hidden" name="meter_key" value="{{ meter.key() }}">
+      <input name="spreadsheet" type="file">
+      <input type="submit" value="Upload">
+    </fieldset>
+  </form>
 {% endblock %}

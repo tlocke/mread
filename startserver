@@ -1,0 +1,4 @@
+#!/bin/bash
+
+. venv/bin/activate
+./../google_appengine/dev_appserver.py --clear_datastore=yes app &

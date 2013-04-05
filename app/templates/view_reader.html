@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Reader: {{ reader.name }}{% endblock %}
+
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt; Reader: {{ reader.name }}
+{% endblock %}
+
+{% block login %}
+  <p id="sign-in">
+    {% if current_reader %}
+      {% if current_reader.key() == reader.key() %}
+        {{ current_reader.name }}
+      {% else %}
+        <a href="/view_reader?reader_key={{ current_reader.key() }}"
+        >{{ current_reader.name }}</a>
+      {% endif %}
+      | <a href="{{ signout_url }}">Sign Out</a>
+    {% else %}
+      <a href="/sign_in">Sign In</a>
+    {% endif %}
+  </p>
+{% endblock %}
+
+{% block content %} 
+  <table>
+    <tr>
+      <td>Name</td>
+      <td>{{ reader.name }}</td>
+    </tr>
+    <tr>
+      <td>OpenIds</td>
+      <td>
+        <ul>
+          {% for openid in reader.openids %}
+            <li>{{ openid }}</li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>Meters</td>
+      <td>
+        <ul>
+          {% for meter in meters %}
+            <li>
+              <a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a> ({{ meter.utility_id }})
+            </li>
+          {% endfor %}
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  {% if current_reader.key == reader.key %}
+    <ul>
+      <li>
+        <a href="reader-settings?reader_key={{ reader.key }}">Reader
+        Settings</a>
+      </li>
+    </ul>
+  {% endif %}
+{% endblock %}

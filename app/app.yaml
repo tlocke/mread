@@ -1,7 +1,8 @@
 application: meteread-hrd
 version: 1
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: true
 
 handlers:
 - url: /stylesheets
@@ -11,7 +12,7 @@ handlers:
   static_dir: static/images
 
 - url: /cron/.*
-  script: cron.py
+  script: mread.app
   login: admin
 
 - url: /robots.txt
@@ -19,8 +20,11 @@ handlers:
   upload: static/robots.txt
 
 - url: /.*
-  script: mread.py
+  script: mread.app
 
 builtins:
 - remote_api: on
-- appstats: on
+
+libraries:
+- name: jinja2
+  version: "2.6"

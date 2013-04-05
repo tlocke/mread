@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}MtrHub &gt; Meter: {{ meter.name }} &gt; Settings{% endblock %}
+
+{% block style %}
+  label {
+    width: 10em;
+    float:left;
+  }
+{% endblock %}
+
+{% block nav %}
+  <a id="logo" href="/">MtrHub</a> &gt;
+  <a href="/view_meter?meter_key={{ meter.key() }}">Meter:
+    {{ meter.name }}</a> &gt; Settings
+{% endblock %}
+
+{% block content %}
+  {% if request.GET.delete %}
+    <form action="/meter_settings" method="post">
+      <fieldset>
+        <input type="hidden" name="meter_key" value="{{ meter.key() }}">
+        <legend>Delete This Meter</legend>
+        <p>Are you sure you want to delete this meter and all its reads?</p>
+        <a href="/meter_settings?meter_key={{ meter.key() }}">Cancel</a>
+        <input type="submit" name="delete" value="Delete">
+      </fieldset>
+    </form>
+  {% else %}
+    <form action="/meter_settings" method="post">
+      <fieldset>
+        <legend>Settings</legend>
+        <br>
+        <fieldset>
+          <label>Utility and Units</label>
+          <select name="utility_units">
+            {% for utility in utilities -%}
+              <optgroup label="{{ utility.name }}">
+                {% for units in utility.units -%}
+                  <option value="{{ utility.id }}-{{ units }}"
+                    {%- if request.POST.utility_id -%}
+                      {%- if request.POST.utility_units == utility.id
+                          + ":" + units -%}
+                        {{ ' selected' }}
+                      {%- endif -%}
+                    {%- else -%}
+                      {%- if utility.id == meter.utility_id and
+                          units == meter.units -%}
+                        {{ ' selected' }}
+                      {%- endif -%}
+                    {%- endif -%}
+                  >{{ utility.name + ' - ' }}
+                    {%- for char in units -%}
+                      {%- if char == '3' -%}
+                        &sup3;
+                      {%- else -%}
+                        {{ char }}
+                      {%- endif -%}
+                    {%- endfor -%}
+                  </option>
+                {% endfor %}
+              </optgroup>
+            {% endfor %}
+          </select>
+          <br/>
+          <label>Meter Name</label>
+          <input name="name" value="
+            {%- if request.POST.name -%}
+              {{ request.POST.name }}
+            {%- else -%}
+              {{ meter.name }}
+            {%- endif -%}
+          ">
+          <br/>
+          <label>Time Zone</label>
+          <select name="time_zone">
+            {% for tz in tzs -%}
+              <option value="{{ tz }}"
+                {%- if request.POST.time_zone -%}
+                  {%- if request.POST.time_zone == tz -%}
+                    {{ ' selected' }}
+                  {%- endif -%}
+                {%- else -%}
+                  {%- if tz == meter.time_zone -%}
+                    {{ ' selected' }}
+                  {%- endif -%}
+                {%- endif -%}
+              >{{ tz }}</option>
+            {%- endfor %}
+          </select>
+        </fieldset>
+        <br/>
+        <fieldset>
+          <legend>Remind me to take a reading</legend>
+          <input type="hidden" name="meter_key" value="{{ meter.key }}">
+          <label>Email Address</label>
+          <input name="email_address" value="
+            {%- if request.POST.email_address -%}
+              {{ request.POST.email_address }}
+            {%- else -%}
+              {%- if meter.reminder_frequency == 'never' -%}
+                {{ user.email_address }}
+              {%- else -%}
+                {{ meter.email_address }}
+              {%- endif -%}
+            {%- endif -%}
+          ">
+          <br>
+          <label>Confirm Email Address</label>
+          <input name="confirm_email_address" value="
+            {%- if request.POST.confirm_email_address -%}
+              {{ request.POST.confirm_email_address }}
+            {%- else -%}
+              {%- if meter.reminder_frequency == 'never' -%}
+                {{ user.email_address }}
+              {%- else -%}
+                {{ meter.email_address }}
+              {%- endif -%}
+            {%- endif -%}
+          ">
+          <br>
+          <label>Starting</label>
+          <div style='float: left; width: 19em;'>
+            {{ input_date('reminder_start', request, reminder_start) }}
+          </div>
+          <br>
+          <label>Frequency</label>
+          <select style='float: left;' name="reminder_frequency">
+            <option value="never"
+              {%- if request.POST.reminder_frequency -%}
+                {%- if request.POST.reminder_frequency == 'never' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.reminder_frequency == 'never' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Never</option>
+            <option value="monthly"
+              {%- if request.POST.reminder_frequency -%}
+                {%- if request.POST.reminder_frequency == 'monthly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.reminder_frequency == 'monthly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Monthly</option>
+            <option value="weekly"
+              {%- if request.POST.reminder_frequency -%}
+                {%- if request.POST.reminder_frequency == 'weekly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.reminder_frequency == 'weekly' -%}
+                  {{ 'selected ' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Weekly</option>
+          </select>
+        </fieldset>
+        <br/>
+        <fieldset>
+          <legend>Prompt to send read to supplier</legend>
+          <br>
+          <label>Frequency</label>
+          <select style='float: left;' name="customer_read_frequency">
+            <option value="never" 
+              {%- if request.POST.customer_read_frequency -%}
+                {%- if request.POST.customer_read_frequency == 'never' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.customer_read_frequency == 'never' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Never</option>
+            <option value="quarterly"
+              {%- if request.POST.customer_read_frequency -%}
+                {%- if request.POST.customer_read_frequency == 'quarterly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.customer_read_frequency == 'quarterly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Quarterly</option>
+            <option value="monthly"
+              {%- if request.POST.customer_read_frequency -%}
+                {%- if request.POST.customer_read_frequency == 'monthly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- else -%}
+                {%- if meter.customer_read_frequency == 'monthly' -%}
+                  {{ ' selected' }}
+                {%- endif -%}
+              {%- endif -%}
+            >Monthly</option>
+          </select>
+        </fieldset>
+        <br/>
+        <fieldset>
+          <legend>Sharing</legend>
+          <label>Public</label>
+          <input type="checkbox" name="is_public" value="True"
+            {%- if request.POST.settings -%}
+              {%- if request.POST.is_public %} checked{% endif -%}
+            {%- else -%}
+              {%- if meter.is_public %} checked{% endif -%}
+            {%- endif -%}
+          >
+        </fieldset>
+        <br/>
+        <input type="submit" value="Update">
+      </fieldset>
+    </form>
+    <br>
+    <form action="/meter_settings">
+      <fieldset>
+        <legend>Delete This Meter</legend>
+        <input type="hidden" name="meter_key" value="{{ meter.key() }}">
+        <input type="submit" name="delete" value="Delete">
+      </fieldset>
+    </form>
+  {%- endif -%}
+{% endblock %}
