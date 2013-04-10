@@ -61,7 +61,7 @@
       </td>
     </tr>
   </table>
-  {% if read.meter.reader.key() == current_reader.key() %}
+  {% if current_reader and read.meter.reader.key() == current_reader.key() %}
     <br>
     <ul>
       <li>

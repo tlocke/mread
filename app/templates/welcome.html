@@ -17,9 +17,9 @@
     {% else %}
       {% if proposed_readers %}
         <p>
-          Welcome to MtrHub. You're signed in with the Openid
-          {{ user.nickname }}. You can associate this OpenId with an existing
-          account:
+          Welcome to MtrHub {{ user.nickname() }}. You're signed in with the
+          Openid {{ user.federated_identity() }}. You can associate this OpenId
+          with an existing account:
         </p>
 
 	{% for proposed_reader in proposed_readers %}
@@ -27,7 +27,7 @@
             <fieldset>
               <legend>Associate this OpenId with an existing account</legend>
               <input type="hidden" name="reader_key"
-                value="{{ proposed_reader.key }}"
+                value="{{ proposed_reader.key() }}"
               >
               <table>
                 <tr>
@@ -61,8 +61,9 @@
 	<p>Or you can <a href="{{ signout_url }}">sign out</a>.</p>
       {% else %}
         <p>
-          Welcome to MtrHub. You're signed in with the Openid
-          {{ user.nickname }}. The next step is to create an account...
+          Welcome to MtrHub {{ user.nickname() }}. You're signed in with the
+          Openid {{ user.federated_identity() }}. The next step is to create an
+          account...
         </p>
 	<br>
 	<form action="/welcome" method="post">

@@ -68,6 +68,16 @@
     </select>{% endif %}{% endif %}
     {%- endmacro -%}
 
+    {% macro input_text(name, request, initial) -%}
+      <input name="{{ name }} " value="
+        {%- if request.POST.name -%}
+          {{ request.POST.name }}
+        {%- else -%}
+          {{ initial }}
+        {%- endif -%}
+      "> 
+    {%- endmacro -%}
+
     {% block head %}
     {% endblock %}
     <title>{% block title %}{% endblock %}</title>
@@ -90,7 +100,7 @@ _gaq.push(['_trackPageview']);
   <body>
     <p id="nav">{% block nav %}MtrHub{% endblock %}</p>
     {% block login %}
-      <p id="sign-in">
+    <p id="sign-in">
         {% if user %}
           {% if current_reader %}
             <a href="/view_reader?reader_key={{ current_reader.key() }}"
@@ -101,7 +111,7 @@ _gaq.push(['_trackPageview']);
           {% endif %}
         {% else %}
           <a href="/sign_in">Sign In</a>
-        {% endif %}
+          {% endif %}
       </p>
     {% endblock %}
 

@@ -10,7 +10,7 @@ import string
 import random
 from webapp2_extras import sessions
 from models import Meter, Read, UserException, Reader, UTILITY_LIST, \
-        Configuration
+        Configuration, get_federated_identity
 
 
 jinja_environment = jinja2.Environment(
@@ -246,7 +246,7 @@ class Welcome(MReadHandler):
             if current_reader is None:
                 fields = self.page_fields(None)
                 proposed_readers = Reader.gql("where proposed_openid = :1",
-                        user.federated_identity()).fetch(10)
+                        get_federated_identity(user)).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
                 self.send_ok(fields)
@@ -258,36 +258,32 @@ class Welcome(MReadHandler):
         if user is None:
             self.return_unauthorized()
 
+        fi = get_federated_identity(user)
         if 'associate' in self.request.POST:
-            current_reader = Reader.get_current_reader()
+            current_reader = Reader.find_current_reader()
             if current_reader is None:
-                reader_key = self.get_str('reader_key')
+                reader_key = self.post_str('reader_key')
                 reader = Reader.get_reader(reader_key)
-                if reader.proposed_openid == user.federated_identity():
+                if reader.proposed_openid == fi:
                     reader.proposed_openid = ''
-                    reader.openids.append(user.federated_identity())
+                    reader.openids.append(fi)
                     reader.put()
-                    self.add_flash('The OpenId ' + user.federated_identity() +
-                            """ has been successfully associated with this
-                            reader.""")
+                    self.add_flash('The OpenId ' + fi + """ has been
+                            successfully associated with this reader.""")
                     self.send_see_other('/view_reader?reader_key=' +
                             str(reader.key()))
                 else:
-                    self.send_ok(message="Can't associate " +
-                            user.federated_identity() +
+                    self.send_ok(message="Can't associate " + fi +
                             " with the account " + reader.name +
                             " because the OpenId you're signed in with " +
                             "doesn't match the proposed OpenId.")
             else:
-                self.send_bad_request(message="The OpenId " +
-                        str(user.federated_identity()) +
+                self.send_bad_request(message="The OpenId " + fi +
                         " is already associated with an account.")
         else:
             current_reader = Reader.find_current_reader()
             if current_reader is None:
-                current_reader = Reader(
-                        openids=[str(user.federated_identity())],
-                        name=user.nickname())
+                current_reader = Reader(openids=[fi], name=user.nickname())
                 current_reader.put()
                 self.add_flash("Account created successfully.")
 
@@ -303,7 +299,7 @@ class ViewMeter(MReadHandler):
         meter_key = self.get_str("meter_key")
         meter = Meter.get_meter(meter_key)
         if meter.is_public:
-            current_reader = Reader.get_current_reader()
+            current_reader = Reader.find_current_reader()
         else:
             current_reader = self.require_current_reader()
             if current_reader.key() != meter.reader.key():
@@ -414,24 +410,24 @@ class SendRead(MReadHandler):
 
     def post(self):
         try:
-            current_reader = Reader.require_current_reader()
-            read_key = self.get_str('read_key')
+            current_reader = self.require_current_reader()
+            read_key = self.post_str('read_key')
             read = Read.get_read(read_key)
             meter = read.meter
             if current_reader.key() != meter.reader.key():
                 self.return_forbidden()
             if 'update' in self.request.POST:
-                meter.send_read_to = self.get_str('send_read_to').strip()
-                meter.send_read_name = self.get_str('send_read_name').strip()
-                meter.send_read_reader_email = self.get_str(
+                meter.send_read_to = self.post_str('send_read_to').strip()
+                meter.send_read_name = self.post_str('send_read_name').strip()
+                meter.send_read_reader_email = self.post_str(
                         'send_read_reader_email').strip()
-                meter.send_read_address = self.get_str(
+                meter.send_read_address = self.post_str(
                         'send_read_address').strip()
-                meter.send_read_postcode = self.get_str(
+                meter.send_read_postcode = self.post_str(
                         'send_read_postcode').strip()
-                meter.send_read_account = self.get_str(
+                meter.send_read_account = self.post_str(
                         'send_read_account').strip()
-                meter.send_read_msn = self.get_str('send_read_msn').strip()
+                meter.send_read_msn = self.post_str('send_read_msn').strip()
                 meter.put()
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Info updated successfully."
@@ -449,7 +445,7 @@ First Line Of Postal Address Of Meter: {{ read.meter.send_read_address }}
 Postcode Of Meter: {{ read.meter.send_read_postcode }}
 Account Number: {{ read.meter.send_read_account }}
 Meter Serial Number: {{ read.meter.send_read_msn }}
-Read Date: {{ read.local_read_date|date:"Y-m-d H:i" }}
+Read Date: {{ read.local_read_date().strftime("%Y-%m-%d %H:%M") }}
 Reading: {{ read.value }} {{ read.meter.units }}""").render(read=read)
 
                 mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>",
@@ -739,7 +735,7 @@ class ViewRead(MReadHandler):
             self.return_forbidden()
 
     def page_fields(self, current_reader, read):
-        return {'current_reader': current_reader, 'read': read}
+        return {'read': read, 'current_reader': current_reader}
 
 
 class EditRead(MReadHandler):

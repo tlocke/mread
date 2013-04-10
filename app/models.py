@@ -19,6 +19,10 @@ UTILITY_IDS = UTILITY_DICT.keys()
 
 UTILITY_LIST = [val for val in UTILITY_DICT.values()]
 
+def get_federated_identity(user):
+    fi = user.federated_identity()
+    return user.nickname() if fi is None else fi
+
 class Configuration(db.Model):
     session_key = db.StringProperty(required=True)
 
@@ -35,7 +39,7 @@ class Reader(db.Model):
             return None
         else:
             return Reader.gql("where openids = :1",
-                    str(user.federated_identity())).get()
+                    str(get_federated_identity(user))).get()
 
     @staticmethod
     def get_reader(key):

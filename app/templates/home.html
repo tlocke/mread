@@ -13,7 +13,7 @@
             <strong>Customer Read Prompt:</strong> The supplier hasn't been
             sent a read from the {{ cand.meter.utility_id }} meter
             {{ cand.meter.name }} for a while. You could
-            <a href="/send_read?read_key={{ cand.key }}">send the latest read
+            <a href="/send_read?read_key={{ cand.key() }}">send the latest read
             to the supplier</a>.
           </li>
         {% endfor %}
@@ -60,15 +60,17 @@
         <tr>
           <td>{{ read.meter.reader.name }}</td>
           <td>
-            <a href="/meter?meter_key={{ read.meter.key }}">{{ read.meter.name }}</a>
+            <a href="/view_meter?meter_key={{ read.meter.key() }}">{{ read.meter.name }}</a>
           </td>
-          <td>{{ read.meter.utility_name }}</td>
-          <td>{{ read.read_date.strftime("%Y-%m-%d %H:%i") }}</td>
-          <td><a href="/read?read_key={{ read.key }}">{{ read.value }}</a></td>
+          <td>{{ read.meter.utility_name() }}</td>
+          <td>{{ read.read_date.strftime("%Y-%m-%d %H:%M") }}</td>
           <td>
-            {% for char in read.meter.units %}
-              {% if char == '3' %}<sup>3</sup>{% else %}{{ char }}{% endif %}
-            {% endfor %}
+            <a href="/view_read?read_key={{ read.key() }}">{{ read.value }}</a>
+          </td>
+          <td>
+            {%- for char in read.meter.units -%}
+              {%- if char == '3' -%}<sup>3</sup>{% else %}{{ char }}{% endif %}
+            {%- endfor %}
           </td>
         </tr>
       {% endfor %}
