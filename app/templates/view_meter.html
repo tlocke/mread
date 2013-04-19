@@ -52,20 +52,20 @@
     </tr>
   </table>
 
-  {% if meter.reader.key() == current_reader.key() %}
+  {% if current_reader and meter.reader.key() == current_reader.key() %}
     <br>
     <table>
       {% if meter.reminder_frequency != 'never' %}
         <tr>
           <th>Date of next reminder</th>
-          <td>{{ meter.local_next_reminder.strftime("%Y-%m-%d %H:%i") }}</td>
+          <td>{{ meter.local_next_reminder.strftime("%Y-%m-%d %H:%M") }}</td>
         </tr>
       {% endif %}
       {% if meter.latest_customer_read_date %}
         <tr>
           <th>Date of last customer read</th>
           <td>
-            {{ meter.latest_customer_read_date.strftime("%Y-%m-%d %H:%i") }}
+            {{ meter.latest_customer_read_date.strftime("%Y-%m-%d %H:%M") }}
           </td>
         </tr>
       {% endif %}
@@ -101,7 +101,7 @@
         <a href="/export_reads?meter_key={{ meter.key() }}">Export reads as a CSV file</a>
       </li>
     {% endif %}
-    {% if meter.reader.key() == current_reader.key() %}
+    {% if current_reader and meter.reader.key() == current_reader.key() %}
       <li>
         <a href="/meter_settings?meter_key={{ meter.key() }}">Meter Settings</a>
       </li>
@@ -128,7 +128,7 @@
     {% for read in reads %}
       <tr>
         <td><a href="/view_read?read_key={{ read.key() }}">View</a></td>
-        <td>{{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}</td>
+        <td>{{ read.local_read_date().strftime("%Y-%m-%d %H:%M") }}</td>
         <td>{{ read.value }}</td>
       </tr>
     {% endfor %}
