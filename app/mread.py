@@ -9,12 +9,13 @@ import pytz
 import string
 import random
 from webapp2_extras import sessions
-from models import Meter, Read, UserException, Reader, UTILITY_LIST, \
-        Configuration, get_federated_identity
+from models import (
+    Meter, Read, UserException, Reader, UTILITY_LIST, Configuration,
+    get_federated_identity)
 
 
 jinja_environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader('templates'))
+    loader=jinja2.FileSystemLoader('templates'))
 
 MIME_MAP = {'html': 'text/html', 'atom': 'application/atom+xml'}
 
@@ -53,8 +54,9 @@ class MReadHandler(webapp2.RequestHandler):
         mime_type = MIME_MAP[template_name.split('.')[-1]]
         self.response.headers['Content-Type'] = mime_type
         template = jinja_environment.get_template(template_name)
-        self.response.out.write(template.render(request=self.request,
-                flashes=flashes, **template_values))
+        self.response.out.write(
+            template.render(
+                request=self.request, flashes=flashes, **template_values))
 
     def send_ok(self, template_values):
         self.return_template('200 OK', template_values)
@@ -96,10 +98,10 @@ class MReadHandler(webapp2.RequestHandler):
             if tzinfo is None:
                 return datetime.datetime(year, month, day, hour, minute)
             else:
-                local_dt = tzinfo.localize(datetime.datetime(year, month, day,
-                    hour, minute))
+                local_dt = tzinfo.localize(
+                    datetime.datetime(year, month, day, hour, minute))
                 return pytz.utc.normalize(
-                        local_dt.astimezone(pytz.utc)).replace(tzinfo=None)
+                    local_dt.astimezone(pytz.utc)).replace(tzinfo=None)
         except ValueError, e:
             raise UserException(str(e))
 
@@ -110,8 +112,8 @@ class MReadHandler(webapp2.RequestHandler):
         try:
             return float(self.post_str(name))
         except ValueError:
-            raise UserException("The '" + name +
-                    "' field doesn't seem to be a number.")
+            raise UserException(
+                "The '" + name + "' field doesn't seem to be a number.")
 
     def require_current_reader(self):
         reader = Reader.find_current_reader()
@@ -130,8 +132,11 @@ class ViewReader(MReadHandler):
         if current_reader.key() != reader.key():
             self.send_forbidden()
 
-        self.send_ok({'reader': reader, 'meters':
-                Meter.gql("where reader = :1", current_reader).fetch(10)})
+        self.send_ok(
+            {
+                'reader': reader,
+                'meters': Meter.gql(
+                    "where reader = :1", current_reader).fetch(10)})
 
 
 FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
@@ -197,11 +202,12 @@ class Home(MReadHandler):
         if user is not None:
             current_reader = Reader.find_current_reader()
             if current_reader is not None:
-                reader_meters = Meter.gql("where reader = :1",
-                        current_reader).fetch(10)
+                reader_meters = Meter.gql(
+                    "where reader = :1", current_reader).fetch(10)
                 fields['meters'] = reader_meters
-                fields['candidate_customer_reads'] = [cand for cand in
-                        [meter.candidate_customer_read() for meter in
+                fields['candidate_customer_reads'] = [
+                    cand for cand in [
+                        meter.candidate_customer_read() for meter in
                         reader_meters] if cand is not None]
         self.send_ok(fields)
 
@@ -216,8 +222,9 @@ class SignIn(MReadHandler):
                     e.values = self.page_fields()
                     raise e
 
-                self.send_found(users.create_login_url(dest_url="/welcome",
-                        federated_identity=openid))
+                self.send_found(
+                    users.create_login_url(
+                        dest_url="/welcome", federated_identity=openid))
             else:
                 self.send_ok(self.page_fields())
         else:
@@ -225,14 +232,18 @@ class SignIn(MReadHandler):
 
     def page_fields(self):
         fields = {'providers': []}
-        for url, name, img_name in [('https://www.google.com/accounts/o8/id',
-                'Google', 'google'), ('yahoo.com', 'Yahoo', 'yahoo'),
+        for url, name, img_name in [
+                ('https://www.google.com/accounts/o8/id', 'Google', 'google'),
+                ('yahoo.com', 'Yahoo', 'yahoo'),
                 ('myspace.com', 'MySpace', 'myspace'),
                 ('aol.com', 'AOL', 'aol'),
                 ('myopenid.com', 'MyOpenID', 'myopenid')]:
-            fields['providers'].append({'name': name,
-                    'url': users.create_login_url(dest_url="/welcome",
-                    federated_identity=url), 'img_name': img_name})
+            fields['providers'].append(
+                {
+                    'name': name,
+                    'url': users.create_login_url(
+                        dest_url="/welcome", federated_identity=url),
+                    'img_name': img_name})
         return fields
 
 
@@ -245,8 +256,9 @@ class Welcome(MReadHandler):
             current_reader = Reader.find_current_reader()
             if current_reader is None:
                 fields = self.page_fields(None)
-                proposed_readers = Reader.gql("where proposed_openid = :1",
-                        get_federated_identity(user)).fetch(10)
+                proposed_readers = Reader.gql(
+                    "where proposed_openid = :1",
+                    get_federated_identity(user)).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
                 self.send_ok(fields)
@@ -268,18 +280,21 @@ class Welcome(MReadHandler):
                     reader.proposed_openid = ''
                     reader.openids.append(fi)
                     reader.put()
-                    self.add_flash('The OpenId ' + fi + """ has been
-                            successfully associated with this reader.""")
-                    self.send_see_other('/view_reader?reader_key=' +
-                            str(reader.key()))
+                    self.add_flash(
+                        'The OpenId ' + fi + " has been successfully "
+                        "associated with this reader.")
+                    self.send_see_other(
+                        '/view_reader?reader_key=' + str(reader.key()))
                 else:
-                    self.send_ok(message="Can't associate " + fi +
-                            " with the account " + reader.name +
-                            " because the OpenId you're signed in with " +
-                            "doesn't match the proposed OpenId.")
+                    self.send_ok(
+                        message="Can't associate " + fi +
+                        " with the account " + reader.name +
+                        " because the OpenId you're signed in with "
+                        "doesn't match the proposed OpenId.")
             else:
-                self.send_bad_request(message="The OpenId " + fi +
-                        " is already associated with an account.")
+                self.send_bad_request(
+                    message="The OpenId " + fi +
+                    " is already associated with an account.")
         else:
             current_reader = Reader.find_current_reader()
             if current_reader is None:
@@ -325,8 +340,8 @@ class ViewMeter(MReadHandler):
             self.send_bad_request(self.page_fields(meter, current_reader, e))
 
     def page_fields(self, meter, current_reader, message=None):
-        reads = Read.gql("where meter = :1 order by read_date desc",
-                meter).fetch(30)
+        reads = Read.gql(
+            "where meter = :1 order by read_date desc", meter).fetch(30)
         now = meter.get_tzinfo().localize(datetime.datetime.now())
 
         return {'meter': meter, 'reads': reads, 'now': now,
@@ -346,8 +361,8 @@ class AddMeter(MReadHandler):
             reminder_frequency = self.post_str('reminder_frequency')
             name = self.post_str('name')
             time_zone = self.post_str('time_zone')
-            reminder_start = self.post_datetime("reminder_start",
-                    pytz.timezone(time_zone))
+            reminder_start = self.post_datetime(
+                "reminder_start", pytz.timezone(time_zone))
             utility_units = self.post_str('utility_units')
             if reminder_frequency == 'never':
                 email_address = None
@@ -359,16 +374,17 @@ class AddMeter(MReadHandler):
                     raise UserException("The email addresses don't match.")
             customer_read_frequency = self.post_str('customer_read_frequency')
 
-            meter = Meter(reader=current_reader, email_address=email_address,
-                    reminder_start=reminder_start,
-                    reminder_frequency=reminder_frequency,
-                    is_public=is_public, name=name, time_zone=time_zone,
-                    customer_read_frequency=customer_read_frequency)
+            meter = Meter(
+                reader=current_reader, email_address=email_address,
+                reminder_start=reminder_start,
+                reminder_frequency=reminder_frequency,
+                is_public=is_public, name=name, time_zone=time_zone,
+                customer_read_frequency=customer_read_frequency)
             meter.put()
             utility_id, units = utility_units.split('-')
-            meter.update(utility_id, units, name, time_zone, is_public,
-                    email_address, reminder_start, reminder_frequency,
-                    customer_read_frequency)
+            meter.update(
+                utility_id, units, name, time_zone, is_public, email_address,
+                reminder_start, reminder_frequency, customer_read_frequency)
             fields = self.page_fields(current_reader)
             fields['location'] = '/meter?meter_key=' + str(meter.key())
             self.send_ok(fields)
@@ -377,21 +393,22 @@ class AddMeter(MReadHandler):
 
     def page_fields(self, current_reader, message=None):
         reminder_start = datetime.datetime.now()
-        reminder_start = {'year': reminder_start.year,
-                'month': '0'[len(str(reminder_start.month)) - 1:] +
-                str(reminder_start.month),
-                'day': '0'[len(str(reminder_start.day)) - 1:] +
-                str(reminder_start.day),
-                'hour': '0'[len(str(reminder_start.hour)) - 1:] +
-                str(reminder_start.hour),
-                'minute': '0'[len(str(reminder_start.minute)) - 1:] +
-                str(reminder_start.minute)}
+        reminder_start = {
+            'year': reminder_start.year,
+            'month': '0'[len(str(reminder_start.month)) - 1:] +
+            str(reminder_start.month),
+            'day': '0'[len(str(reminder_start.day)) - 1:] +
+            str(reminder_start.day),
+            'hour': '0'[len(str(reminder_start.hour)) - 1:] +
+            str(reminder_start.hour),
+            'minute': '0'[len(str(reminder_start.minute)) - 1:] +
+            str(reminder_start.minute)}
         days = ['0'[len(str(day)) - 1:] + str(day) for day in range(1, 32)]
-        months = ['0'[len(str(month)) - 1:] +
-                str(month) for month in range(1, 13)]
+        months = [
+            '0'[len(str(month)) - 1:] + str(month) for month in range(1, 13)]
         hours = ['0'[len(str(hour)) - 1:] + str(hour) for hour in range(24)]
-        minutes = ['0'[len(str(minute)) - 1:] +
-                str(minute) for minute in range(60)]
+        minutes = [
+            '0'[len(str(minute)) - 1:] + str(minute) for minute in range(60)]
         return {'utilities': UTILITY_LIST, 'current_reader': current_reader,
                 'tzs': pytz.common_timezones, 'reminder_start': reminder_start,
                 'months': months, 'days': days, 'hours': hours,
@@ -420,13 +437,13 @@ class SendRead(MReadHandler):
                 meter.send_read_to = self.post_str('send_read_to').strip()
                 meter.send_read_name = self.post_str('send_read_name').strip()
                 meter.send_read_reader_email = self.post_str(
-                        'send_read_reader_email').strip()
+                    'send_read_reader_email').strip()
                 meter.send_read_address = self.post_str(
-                        'send_read_address').strip()
+                    'send_read_address').strip()
                 meter.send_read_postcode = self.post_str(
-                        'send_read_postcode').strip()
+                    'send_read_postcode').strip()
                 meter.send_read_account = self.post_str(
-                        'send_read_account').strip()
+                    'send_read_account').strip()
                 meter.send_read_msn = self.post_str('send_read_msn').strip()
                 meter.put()
                 fields = self.page_fields(current_reader, read)
@@ -448,11 +465,12 @@ Meter Serial Number: {{ read.meter.send_read_msn }}
 Read Date: {{ read.local_read_date().strftime("%Y-%m-%d %H:%M") }}
 Reading: {{ read.value }} {{ read.meter.units }}""").render(read=read)
 
-                mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>",
-                        to=meter.send_read_to, cc=meter.send_read_reader_email,
-                        reply_to=meter.send_read_reader_email,
-                        subject="My " + meter.utility_id + " meter reading",
-                        body=body)
+                mail.send_mail(
+                    sender="MtrHub <mtrhub@mtrhub.com>",
+                    to=meter.send_read_to, cc=meter.send_read_reader_email,
+                    reply_to=meter.send_read_reader_email,
+                    subject="My " + meter.utility_id + " meter reading",
+                    body=body)
 
                 meter.latest_customer_read_date = read.read_date
                 meter.put()
@@ -479,9 +497,11 @@ class ExportReads(MReadHandler):
             if current_reader.key() != meter.reader.key():
                 self.return_forbidden()
 
-        reads = Read.gql("where meter = :1 order by read_date desc",
-                meter).fetch(1000)
-        self.send_ok({'reads': reads,
+        reads = Read.gql(
+            "where meter = :1 order by read_date desc", meter).fetch(1000)
+        self.send_ok(
+            {
+                'reads': reads,
                 'template-name': 'export_reads.csv',
                 'content-type': 'text/csv',
                 'content-disposition': 'attachment; filename=reads.csv;'})
@@ -517,24 +537,25 @@ class MeterSettings(MReadHandler):
                 utility_units = self.post_str('utility_units')
                 name = self.post_str('name')
                 time_zone = self.post_str('time_zone')
-                reminder_start = self.post_datetime("reminder_start",
-                        pytz.timezone(time_zone))
+                reminder_start = self.post_datetime(
+                    "reminder_start", pytz.timezone(time_zone))
 
                 utility_id, units = utility_units.split('-')
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
                     raise UserException("The email addresses don't match")
                 customer_read_frequency = self.post_str(
-                        'customer_read_frequency')
-                meter.update(utility_id, units, name, time_zone, is_public,
-                        email_address, reminder_start, reminder_frequency,
-                        customer_read_frequency)
+                    'customer_read_frequency')
+                meter.update(
+                    utility_id, units, name, time_zone, is_public,
+                    email_address, reminder_start, reminder_frequency,
+                    customer_read_frequency)
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Settings updated successfully.'
                 self.send_ok(fields)
         except UserException as e:
-            self.send_bad_request(self.page_fields(meter, current_reader,
-                    str(e)))
+            self.send_bad_request(
+                self.page_fields(meter, current_reader, str(e)))
 
     def page_fields(self, meter, current_reader, message=None):
         if message is None:
@@ -545,7 +566,8 @@ class MeterSettings(MReadHandler):
             reminder_start = datetime.datetime.now()
         else:
             reminder_start = meter.reminder_start
-        reminder_start = reminder_start.replace(tzinfo=pytz.timezone(
+        reminder_start = reminder_start.replace(
+            tzinfo=pytz.timezone(
                 'UTC')).astimezone(pytz.timezone(meter.time_zone))
         return {'utilities': UTILITY_LIST, 'current_reader': current_reader,
                 'meter': meter, 'tzs': pytz.common_timezones,
@@ -601,8 +623,8 @@ class ReaderSettings(MReadHandler):
                 reader.name = name
                 reader.put()
                 self.add_flash('Settings updated successfully.')
-                self.send_see_other('/view_reader?reader_key=' +
-                        str(reader.key()))
+                self.send_see_other(
+                    '/view_reader?reader_key=' + str(reader.key()))
         except UserException as e:
             self.send_bad_request(self.page_fields(reader, str(e)))
 
@@ -638,14 +660,14 @@ class Upload(MReadHandler):
                                 date in the format yyyy-MM-dd HH:mm followed by
                                 the reading.""")
                     try:
-                        read_date = datetime.datetime.strptime(row[0].strip(),
-                                '%Y-%m-%d %H:%M')
+                        read_date = datetime.datetime.strptime(
+                            row[0].strip(), '%Y-%m-%d %H:%M')
                     except ValueError as e:
-                        raise UserException("Problem at line number " +
-                                str(rdr.line_num) + """ of the file. The first
-                                field (the read date field) isn't formatted
-                                correctly, it should be of the form
-                                2010-02-23T21:46. """ + str(e))
+                        raise UserException(
+                            "Problem at line number " + str(rdr.line_num) +
+                            " of the file. The first field (the read date "
+                            "field) isn't formatted correctly, it should be "
+                            "of the form 2010-02-23T21:46. " + str(e))
                     value = float(row[1].strip())
                     read = Read(meter=meter, read_date=read_date, value=value)
                     read.put()
@@ -680,16 +702,16 @@ class Chart(MReadHandler):
             q_finish = finish_date
         else:
             q_finish = last_read.read_date
-        for read in Read.gql("""where meter = :1 and read_date > :2 and
-                read_date <= :3 order by read_date""", meter, start_date,
-                q_finish):
+        for read in Read.gql(
+                "where meter = :1 and read_date > :2 and read_date <= :3 "
+                "order by read_date", meter, start_date, q_finish):
             if first_read is not None:
                 rate = (read.value - first_read.value) / \
-                        self.total_seconds(read.read_date -
-                        first_read.read_date)
-                sum_kwh += rate * max(self.total_seconds(min(read.read_date,
-                        finish_date) - max(first_read.read_date, start_date)),
-                        0)
+                    self.total_seconds(read.read_date - first_read.read_date)
+                sum_kwh += rate * max(
+                    self.total_seconds(
+                        min(read.read_date, finish_date)
+                        - max(first_read.read_date, start_date)), 0)
             first_read = read
         return {'kwh': sum_kwh, 'code': code, 'start_date': start_date,
                 'finish_date': finish_date}
@@ -706,14 +728,15 @@ class Chart(MReadHandler):
         months = []
         for month in range(-11, 1):
             month_start = now + \
-                    dateutil.relativedelta.relativedelta(months=month)
+                dateutil.relativedelta.relativedelta(months=month)
             month_finish = month_start + \
-                    dateutil.relativedelta.relativedelta(months=1)
+                dateutil.relativedelta.relativedelta(months=1)
 
             months.append(self.kwh(meter, month_start, month_finish))
 
-        labels = ','.join('"' + datetime.datetime.strftime(month['start_date'],
-                '%b %Y') + '"' for month in months)
+        labels = ','.join(
+            '"' + datetime.datetime.strftime(month['start_date'], '%b %Y') +
+            '"' for month in months)
         data = ','.join(str(round(month['kwh'], 2)) for month in months)
         return {'current_reader': Reader.find_current_reader(),
                 'meter': meter, 'data': data, 'labels': labels}
@@ -756,8 +779,8 @@ class EditRead(MReadHandler):
 
             if 'delete' in self.request.POST:
                 read.delete()
-                self.send_see_other("/view_meter?meter_key=" +
-                        str(meter.key()))
+                self.send_see_other(
+                    "/view_meter?meter_key=" + str(meter.key()))
             else:
                 read_date = self.post_datetime("read")
                 value = self.post_float("value")
@@ -769,13 +792,21 @@ class EditRead(MReadHandler):
             self.send_bad_request(self.page_fields(current_reader, read, e))
 
     def page_fields(self, current_reader, read, message=None):
-        days = [{'display': '0'[len(str(day)) - 1:] + str(day),
+        days = [
+            {
+                'display': '0'[len(str(day)) - 1:] + str(day),
                 'number': day} for day in range(1, 32)]
-        months = [{'display': '0'[len(str(month)) - 1:] + str(month),
+        months = [
+            {
+                'display': '0'[len(str(month)) - 1:] + str(month),
                 'number': month} for month in range(1, 13)]
-        hours = [{'display': '0'[len(str(hour)) - 1:] + str(hour),
+        hours = [
+            {
+                'display': '0'[len(str(hour)) - 1:] + str(hour),
                 'number': hour} for hour in range(24)]
-        minutes = [{'display': '0'[len(str(minute)) - 1:] + str(minute),
+        minutes = [
+            {
+                'display': '0'[len(str(minute)) - 1:] + str(minute),
                 'number': minute} for minute in range(60)]
 
         return {'current_reader': current_reader, 'read': read,
@@ -808,31 +839,35 @@ Regards,
 
 MtrHub.
 """).render(meter=meter)
-            mail.send_mail(sender="MtrHub <mtrhub@mtrhub.com>",
-                    to=meter.email_address,
-                    subject="MtrHub: Remember to take a meter reading.",
-                    body=body)
+            mail.send_mail(
+                sender="MtrHub <mtrhub@mtrhub.com>",
+                to=meter.email_address,
+                subject="MtrHub: Remember to take a meter reading.",
+                body=body)
             meter.set_next_reminder()
             meter.put()
         self.send_ok({})
 
-routes = [(r'/', Home), (r'/sign_in', SignIn), (r'/view_meter', ViewMeter),
-        (r'/view_read', ViewRead), (r'/edit_read', EditRead),
-        (r'/send_read', SendRead), (r'/upload', Upload), (r'/chart', Chart),
-        (r'/meter_settings', MeterSettings), (r'/view_reader', ViewReader),
-        (r'/reader_settings', ReaderSettings), (r'/welcome', Welcome),
-        (r'/export_reads', ExportReads), (r'/add_meter', AddMeter),
-        (r'/cron', Cron), (r'/cron/reminders', Reminders)]
-template_names = dict([(cls.__name__, rt[1:] + '.html') for rt, cls in
-        routes if rt != '/'])
+routes = [
+    (r'/', Home), (r'/sign_in', SignIn), (r'/view_meter', ViewMeter),
+    (r'/view_read', ViewRead), (r'/edit_read', EditRead),
+    (r'/send_read', SendRead), (r'/upload', Upload), (r'/chart', Chart),
+    (r'/meter_settings', MeterSettings), (r'/view_reader', ViewReader),
+    (r'/reader_settings', ReaderSettings), (r'/welcome', Welcome),
+    (r'/export_reads', ExportReads), (r'/add_meter', AddMeter),
+    (r'/cron', Cron), (r'/cron/reminders', Reminders)]
+template_names = dict(
+    [(cls.__name__, rt[1:] + '.html') for rt, cls in routes if rt != '/'])
 template_names['Home'] = 'home.html'
 conf = Configuration.all().get()
 if conf is None:
-    session_key = ''.join(random.choice(
+    session_key = ''.join(
+        random.choice(
             string.ascii_uppercase + string.digits) for x in range(10)
-            ).encode('ascii', 'ignore')
+        ).encode('ascii', 'ignore')
     conf = Configuration(session_key=session_key)
     conf.put()
-config = {'webapp2_extras.sessions':
-        {'secret_key': conf.session_key.encode('ascii', 'ignore')}}
+config = {
+    'webapp2_extras.sessions': {
+        'secret_key': conf.session_key.encode('ascii', 'ignore')}}
 app = webapp2.WSGIApplication(routes, debug=True, config=config)
