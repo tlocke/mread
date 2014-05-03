@@ -1,5 +1,5 @@
 from google.appengine.ext import db
-from google.appengine.api import users, mail
+from google.appengine.api import mail
 import datetime
 import csv
 import dateutil.relativedelta
@@ -8,6 +8,7 @@ import pytz
 import string
 import random
 import sys
+from webob.exc import HTTPBadRequest
 
 
 UTILITY_DICT = {'electricity':
@@ -19,38 +20,21 @@ UTILITY_IDS = UTILITY_DICT.keys()
 
 UTILITY_LIST = [val for val in UTILITY_DICT.values()]
 
-def get_federated_identity(user):
-    fi = user.federated_identity()
-    return user.nickname() if fi is None else fi
-
 class Configuration(db.Model):
     session_key = db.StringProperty(required=True)
 
 
 class Reader(db.Model):
-    name = db.StringProperty(required=True, default='Me')
-    openids = db.StringListProperty(required=True)
-    proposed_openid = db.StringProperty(required=False, default='')
-
-    @staticmethod
-    def find_current_reader():
-        user = users.get_current_user()
-        if user is None:
-            return None
-        else:
-            return Reader.gql("where openids = :1",
-                    str(get_federated_identity(user))).get()
+    name = db.StringProperty(required=True)
+    emails = db.StringListProperty(required=True)
+    proposed_email = db.StringProperty(required=False, default='')
 
     @staticmethod
     def get_reader(key):
         reader = Reader.get(key)
         if reader is None:
-            raise UserException("Can't find a reader with key " + key)
+            raise HTTPBadRequest("Can't find a reader with key " + key)
         return reader
-
-
-class UserException(Exception):
-    pass
 
 
 class Meter(db.Model):
@@ -80,7 +64,7 @@ class Meter(db.Model):
     def get_meter(key):
         meter = Meter.get(key)
         if meter is None:
-            raise UserException("The meter can't be found.")
+            raise HTTPBadRequest("The meter can't be found.")
         return meter
 
     def update(self, utility_id, units, name, tz_name, is_public,
@@ -89,17 +73,17 @@ class Meter(db.Model):
         try:
             utility = UTILITY_DICT[utility_id]
         except KeyError:
-            raise UserException("That's not a valid utility id.")
+            raise HTTPBadRequest("That's not a valid utility id.")
         self.utility_id = utility_id
         if units not in utility['units']:
-            raise UserException("Those aren't valid units.")
+            raise HTTPBadRequest("Those aren't valid units.")
         self.units = units
         self.name = name
         try:
             pytz.timezone(tz_name)
             self.time_zone = tz_name
         except KeyError:
-            raise UserException("Can't find the time zone " + tz_name)
+            raise HTTPBadRequest("Can't find the time zone " + tz_name)
         self.is_public = is_public
         self.email_address = email_address
         self.reminder_start = reminder_start
@@ -109,7 +93,7 @@ class Meter(db.Model):
         elif self.reminder_frequency in FREQS:
             self.set_next_reminder()
         else:
-            raise UserException("Reminder frequency not recognized.")
+            raise HTTPBadRequest("Reminder frequency not recognized.")
         self.customer_read_frequency = customer_read_frequency
         self.put()
 
@@ -171,12 +155,12 @@ class Read(db.Model):
     def get_read(key):
         read = Read.get(key)
         if read is None:
-            raise UserException("Can't find the read with key " + str(key))
+            raise HTTPBadRequest("Can't find the read with key " + str(key))
         return read
 
     def update(self, read_date, value):
         if read_date > datetime.datetime.now():
-            raise UserException("The read date can't be in the future.")
+            raise HTTPBadRequest("The read date can't be in the future.")
         self.read_date = read_date
         self.value = value
         self.put()

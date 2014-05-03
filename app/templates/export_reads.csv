@@ -1,3 +1,4 @@
 Time,Reading
-{% for read in reads %}{{ read.read_date|date:"Y-m-d H:i" }},{{ read.kwh }}
-{% endfor %}
+{% for read in reads -%}
+	{{read.read_date.strftime("%Y-%m-%d %H:%M")}},{{read.value}}
+{%- endfor %}

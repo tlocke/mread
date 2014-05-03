@@ -3,7 +3,7 @@
 {% block title %}MtrHub &gt; Reader: {{ reader.name }}{% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt; Reader: {{ reader.name }}
+  Reader: {{ reader.name }}
 {% endblock %}
 
 {% block login %}
@@ -29,11 +29,11 @@
       <td>{{ reader.name }}</td>
     </tr>
     <tr>
-      <td>OpenIds</td>
+      <td>Email Addreses</td>
       <td>
         <ul>
-          {% for openid in reader.openids %}
-            <li>{{ openid }}</li>
+          {% for email in reader.emails %}
+            <li>{{email}}</li>
           {% endfor %}
         </ul>
       </td>
@@ -44,7 +44,9 @@
         <ul>
           {% for meter in meters %}
             <li>
-              <a href="/meter?meter_key={{ meter.key }}">{{ meter.name }}</a> ({{ meter.utility_id }})
+              <a
+                href="/view_meter?meter_key={{meter.key()}}"
+              >{{meter.name}}</a> ({{meter.utility_id}})
             </li>
           {% endfor %}
         </ul>
@@ -52,12 +54,9 @@
     </tr>
   </table>
 
-  {% if current_reader.key == reader.key %}
-    <ul>
-      <li>
-        <a href="reader-settings?reader_key={{ reader.key }}">Reader
-        Settings</a>
-      </li>
-    </ul>
+  {% if current_reader.key() == reader.key() %}
+    <p>
+      <a href="/reader_settings?reader_key={{reader.key()}}">Update</a>
+    </p>
   {% endif %}
 {% endblock %}

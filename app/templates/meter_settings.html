@@ -10,7 +10,6 @@
 {% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt;
   <a href="/view_meter?meter_key={{ meter.key() }}">Meter:
     {{ meter.name }}</a> &gt; Settings
 {% endblock %}
@@ -99,7 +98,7 @@
               {{ request.POST.email_address }}
             {%- else -%}
               {%- if meter.reminder_frequency == 'never' -%}
-                {{ user.email_address }}
+                {{ user_email }}
               {%- else -%}
                 {{ meter.email_address }}
               {%- endif -%}
@@ -112,7 +111,7 @@
               {{ request.POST.confirm_email_address }}
             {%- else -%}
               {%- if meter.reminder_frequency == 'never' -%}
-                {{ user.email_address }}
+                {{ user_email }}
               {%- else -%}
                 {{ meter.email_address }}
               {%- endif -%}

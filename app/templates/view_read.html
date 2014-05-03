@@ -6,7 +6,6 @@
 {% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt;
   <a href="/view_meter?meter_key={{ read.meter.key() }}">Meter:
     {{ read.meter.name }}</a> &gt;
   Read {{ read.local_read_date().strftime("%Y-%m-%d  %H:%M") }}

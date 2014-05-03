@@ -10,27 +10,21 @@
   </test>
 
   <test name="Try logging in.">
-    <!-- Look at log in page -->
-    <request path="/sign_in">
-      <response-code value="200" />
-    </request>
-
-    <!-- Sign in -->
-    <request
-      path="/_ah/login?email=test%40example.com&amp;action=Login&amp;continue=http%3A%2F%2Flocalhost%3A8080%2Fwelcome"
-      follow-redirects="true">
+    <!-- Log in-->
+    <request path="/xhr/sign_in" method="post">
+      <control name="assert" value="assrt"/>
+      <control name="user_email" value="test@example.com"/>
       <response-code value="200" />
     </request>
 
     <!-- Create account -->
-    <request path="/welcome" method="post">
+    <request path="/add_reader" method="post">
+      <control name="name" value="Test"/>
       <response-code value="303" />
-      <regex pattern="/" />
     </request>
-
     <request path="/">
       <response-code value="200" />
-      <regex pattern="Account created successfully\." />
+      <regex pattern="Account created successfully." />
     </request>
 
     <!-- Add a meter -->
@@ -48,14 +42,14 @@
       <control name="reminder_start_hour" value="18" />
       <control name="reminder_start_minute" value="30" />
       <control name="customer_read_frequency" value="monthly" />
-      <response-code value="200" />
+      <response-code value="303" />
     </request>
   </test>
   <test name="View the meter.">
     <request path="/view_meter?meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">
-      <regex
-        pattern='&lt;a href="/_ah/login\?continue=http%3A//localhost%3A8080/&amp;action=logout"&gt;Sign Out&lt;/a&gt;' />
-      <regex pattern='&gt;test@example.com&lt;' />
+      <regex pattern='&lt;a id="signout" href="javascript:void\(0\)"&gt;Sign Out&lt;/a&gt;'/>
+
+      <regex pattern='&gt;Test&lt;' />
 
       <response-code value="200" />
     </request>
@@ -63,7 +57,7 @@
   <test name="View meter settings.">
     <request
       path="/meter_settings?meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">
-      <regex pattern='&gt;test@example.com&lt;' />
+      <regex pattern='&gt;Test&lt;' />
       <regex
         pattern='&lt;option value="electricity-kWh" selected&gt;Electricity - kWh&lt;/option&gt;' />
       <response-code value="200" />
@@ -90,7 +84,7 @@
     <request path="/edit_read?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA">
       <response-code value="200" />
       <regex
-        pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;[\r\n] *&lt;input type="hidden" name="read_key" value="ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA"' />
+        pattern='&lt;legend&gt;Delete This Read&lt;/legend&gt;\s*&lt;input type="hidden" name="read_key" value="ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA"' />
     </request>
   </test>
   <test name="Insert a read with a blank value.">
@@ -156,11 +150,11 @@
       <response-code value="200" />
     </request>
   </test>
-  <test name="Propose an OpenId.">
+  <test name="Propose an email.">
     <request path="/reader_settings" method="post">
       <control name="reader_key" value="ahBkZXZ-bWV0ZXJlYWQtaHJkchMLEgZSZWFkZXIYgICAgICAgAkM" />
-      <control name="proposed_openid" value="pink@example.com" />
-      <control name="propose_openid" value="Propose OpenId" />
+      <control name="proposed_email" value="pink@example.com" />
+      <control name="propose_email" value="Propose Email" />
       <response-code value="200" />
     </request>
   </test>
@@ -186,7 +180,7 @@
       <response-code value="200" />
     </request>
 
-    <!-- And Sign out -->
+    <!-- And Sign out the administrator -->
     <request
       path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
       follow-redirects="true">
@@ -194,17 +188,20 @@
     </request>
   </test>
   <test name="Try and view the meter without being signed in">
+    <request path="/xhr/sign_out">
+    </request>
     <request path="/view_meter?meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">
       <response-code value="401" />
     </request>
   </test>
   <test
     name="Log in, change the meter to public and check it's there on the homepage.">
-    <request
-      path="/_ah/login?email=test@example.com&amp;continue=http://localhost:8080/&amp;action=Login"
-      follow-redirects="true">
+    <request path="/xhr/sign_in" method="post">
+      <control name="assert" value="assrt"/>
+      <control name="user_email" value="test@example.com"/>
       <response-code value="200" />
     </request>
+
     <!-- Also change utility to gas -->
     <request path="/meter_settings" method="post">
       <control name="meter_key" value="ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww" />
@@ -224,30 +221,30 @@
       <response-code value="200" />
     </request>
 
-    <!-- Sign out -->
-    <request
-      path="/_ah/login?continue=http%3A//localhost%3A8080/&amp;action=Logout"
-      follow-redirects="true">
+    <request path="/xhr/sign_out">
       <response-code value="200" />
     </request>
 
     <!-- Check the details of the public meter is shown -->
     <request path="/">
       <regex
-        pattern='&lt;tr&gt;\s*&lt;td&gt;test@example.com&lt;/td&gt;\s*&lt;td&gt;\s*&lt;a href="/view_meter\?meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww"&gt;House&lt;/a&gt;\s*&lt;/td&gt;\s*&lt;td&gt;Gas&lt;/td&gt;\s*&lt;td&gt;2011-02-15 18:40&lt;/td&gt;\s*&lt;td&gt;\s*&lt;a href="/view_read\?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA"&gt;49.0&lt;/a&gt;\s*&lt;/td&gt;\s*&lt;td&gt;m&lt;sup&gt;3&lt;/sup&gt;\s*&lt;/td&gt;' />
+        pattern='&lt;tr&gt;\s*&lt;td&gt;Test&lt;/td&gt;\s*&lt;td&gt;\s*&lt;a href="/view_meter\?meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww"&gt;House&lt;/a&gt;\s*&lt;/td&gt;\s*&lt;td&gt;Gas&lt;/td&gt;\s*&lt;td&gt;2011-02-15 18:40&lt;/td&gt;\s*&lt;td&gt;\s*&lt;a href="/view_read\?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA"&gt;49\.0&lt;/a&gt;\s*&lt;/td&gt;\s*&lt;td&gt;m&lt;sup&gt;3&lt;/sup&gt;\s*&lt;/td&gt;' />
     </request>
 
     <request path="/view_read?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA">
       <response-code value="200" />
     </request>
   </test>
-  <test name="Log in with proposed OpenId">
-    <request
-      path="/_ah/login?email=pink@example.com&amp;continue=http://localhost:8080/welcome&amp;action=Login"
-      follow-redirects="true">
+  <test name="Log in with proposed email">
+    <request path="/xhr/sign_in" method="post">
+      <control name="assert" value="assrt"/>
+      <control name="user_email" value="pink@example.com"/>
       <response-code value="200" />
-      <regex
-        pattern='&lt;input type="hidden" name="reader_key"\s*value="ahBkZXZ-bWV0ZXJlYWQtaHJkchMLEgZSZWFkZXIYgICAgICAgAkM"\s*&gt;' />
+    </request>
+
+    <request path="/welcome">
+      <regex pattern='pink@example.com' />
+      <response-code value="200" />
     </request>
 
     <request path="/welcome" method="post">

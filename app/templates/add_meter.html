@@ -9,194 +9,190 @@
   }
 {% endblock %}
 
-{% block nav %}<a id="logo" href="/">MtrHub</a> &gt; Add Meter{% endblock %}
+{% block nav %}Add Meter{% endblock %}
 
 {% block content %}
-  {% if location %}
-    <p>The <a href="{{ location }}">meter</a> has been successfully created.</p>
-  {% else %} 
-    <form action="add_meter" method="post">
-      <fieldset>
-        <legend>Add Meter</legend>
-          <br>
-          <fieldset>
-            <label>Utility and Units</label>
-            <select name="utility_units">
-              {% for utility in utilities -%}
-                <optgroup label="{{ utility.name }}">
-                  {% for units in utility.units -%}
-                    <option value="{{ utility.id }}-{{ units }}"
-                      {%- if request.POST.utility == utility.id + units %}
-                        selected="selected"
+  <form action="add_meter" method="post">
+    <fieldset>
+      <legend>Add Meter</legend>
+        <br>
+        <fieldset>
+          <label>Utility and Units</label>
+          <select name="utility_units">
+            {% for utility in utilities -%}
+              <optgroup label="{{ utility.name }}">
+                {% for units in utility.units -%}
+                  <option value="{{ utility.id }}-{{ units }}"
+                    {%- if request.POST.utility == utility.id + units %}
+                      selected="selected"
+                    {%- endif -%}
+                  >
+                    {{ utility.name }} -
+                    {% for char in units -%}
+                      {%- if char == '3' -%}
+                        &sup3;
+                      {%- else -%}
+                        {{ char }}
                       {%- endif -%}
-                    >
-                      {{ utility.name }} -
-                      {% for char in units -%}
-                        {%- if char == '3' -%}
-                          &sup3;
-                        {%- else -%}
-                          {{ char }}
-                        {%- endif -%}
-                      {%- endfor %}
-                    </option>
-                  {%- endfor -%}
-                </optgroup>
-              {% endfor %}
-            </select>
-            <br>
-            <label>Meter Name</label>
-            <input name="name" value="
-              {%- if request.POST.name -%}
-                {{ request.POST.name }}
-              {%- endif -%}"
-            >
-            <br/>
-            <label>Time Zone</label>
-            <select name="time_zone">
-              {% for tz in tzs %}
-                <option value="{{ tz }}" 
-                  {%- if request.POST.time_zone %}
-                    {% if request.POST.time_zone == tz %}
-                      selected="selected"
-                    {% endif -%}
-                  {% endif -%}
-                >
-                  {{ tz }}
-                </option>
-              {% endfor %}
-            </select>
-          </fieldset>
-          <br/>
-        <fieldset>
-          <legend>Remind me to take a reading</legend>
-          <label>Email Address</label>
-          <input name="email_address" value="{{ request.POST.email_address }}">
-          
-          <br>
-          <label>Confirm Email Address</label>
-          <input name="confirm_email_address"
-              value="{{ request.POST.confirm_email_address }}">
-          <br>
-          <label>Starting</label>
-          <div style='float: left; width: 19em;'>
-            <input size="4" maxlength="4" name="reminder_start_year" value="
-              {%- if request.POST.reminder_start_year -%}
-                {{ request.POST.reminder_start_year }}
-              {%- else -%}
-                {{ reminder_start.year }}
-              {%- endif -%}"
-            >-<select name="reminder_start_month">
-              {%- for month in months %}
-                <option value="{{ month }}"
-                  {% if request.POST.reminder_start_month %}
-                    {% if month == request.POST.reminder_start_month %}
-                      selected="selected"
-                    {% endif %}
-                  {% else %}
-                    {% if month == reminder_start.month %}
-                      selected="selected"
-                    {% endif %}
-                  {% endif %}
-                >{{ month }}</option>
-              {% endfor %}
-            </select>-<select name="reminder_start_day">
-              {% for day in days %}
-          <option value="{{ day }}"
-          {% if request.POST.reminder_start_day %}
-          {% if day == request.POST.reminder_start_day %} selected="selected"{% endif %}
-          {% else %}
-          {% if day == reminder_start.day %} selected="selected"{% endif %}
-          {% endif %}>{{ day }}
-          </option>
-          {% endfor %}
+                    {%- endfor %}
+                  </option>
+                {%- endfor -%}
+              </optgroup>
+            {% endfor %}
           </select>
-          <select name="reminder_start_hour">
-          {% for hour in hours %}
-          <option value="{{ hour }}"
-          {% if request.POST.reminder_start_hour %}
-          {% if hour == request.POST.reminder_start_hour %} selected="selected"{% endif %}
-          {% else %}
-          {% if hour == reminder_start.hour %} selected="selected"{% endif %}
-          {% endif %}>{{ hour }}
-          </option>
-          {% endfor %}
-  </select>:<select name="reminder_start_minute">
-          {% for minute in minutes %}
-          <option value="{{ minute }}"
-          {% if request.POST.reminder_start_minute %}
-          {% if minute == request.POST.reminder_start_minute %} selected="selected"{% endif %}
-          {% else %}
-          {% if minute == reminder_start.minute %} selected="selected"{% endif %}
-          {% endif %}>{{ minute }}
-          </option>
-          {% endfor %}
-              </select>
-            </div>
-            <br><label>Frequency</label>
-            <select style='float: left;' name="reminder_frequency">
-              <option value="never"
-                {% if request.POST.reminder_frequency == 'never' %}
-                  selected="selected"
-                {% endif %}
-              >
-                Never
-              </option>
-              <option value="monthly"
-                {% if request.POST.reminder_frequency == 'monthly' %}
-                  selected="selected"
-                {% endif %}
-              >
-                Monthly
-              </option>
-              <option value="weekly"
-                {% if request.POST.reminder_frequency == 'weekly' %}
-                  selected="selected"
-                {% endif %}
-              >
-                Weekly
-              </option>
-            </select>
-          </fieldset>
-          <br/>
-        <fieldset>
-          <legend>Prompt to send read to supplier</legend>
           <br>
-          <label>Frequency</label>
-          <select style='float: left;' name="customer_read_frequency">
+          <label>Meter Name</label>
+          <input name="name" value="
+            {%- if request.POST.name -%}
+              {{ request.POST.name }}
+            {%- endif -%}"
+          >
+          <br/>
+          <label>Time Zone</label>
+          <select name="time_zone">
+            {% for tz in tzs %}
+              <option value="{{ tz }}" 
+                {%- if request.POST.time_zone %}
+                  {% if request.POST.time_zone == tz %}
+                    selected="selected"
+                  {% endif -%}
+                {% endif -%}
+              >
+                {{ tz }}
+              </option>
+            {% endfor %}
+          </select>
+        </fieldset>
+        <br/>
+      <fieldset>
+        <legend>Remind me to take a reading</legend>
+        <label>Email Address</label>
+        <input name="email_address" value="{{ request.POST.email_address }}">
+        
+        <br>
+        <label>Confirm Email Address</label>
+        <input name="confirm_email_address"
+            value="{{ request.POST.confirm_email_address }}">
+        <br>
+        <label>Starting</label>
+        <div style='float: left; width: 19em;'>
+          <input size="4" maxlength="4" name="reminder_start_year" value="
+            {%- if request.POST.reminder_start_year -%}
+              {{ request.POST.reminder_start_year }}
+            {%- else -%}
+              {{ reminder_start.year }}
+            {%- endif -%}"
+          >-<select name="reminder_start_month">
+            {%- for month in months %}
+              <option value="{{ month }}"
+                {% if request.POST.reminder_start_month %}
+                  {% if month == request.POST.reminder_start_month %}
+                    selected="selected"
+                  {% endif %}
+                {% else %}
+                  {% if month == reminder_start.month %}
+                    selected="selected"
+                  {% endif %}
+                {% endif %}
+              >{{ month }}</option>
+            {% endfor %}
+          </select>-<select name="reminder_start_day">
+            {% for day in days %}
+        <option value="{{ day }}"
+        {% if request.POST.reminder_start_day %}
+        {% if day == request.POST.reminder_start_day %} selected="selected"{% endif %}
+        {% else %}
+        {% if day == reminder_start.day %} selected="selected"{% endif %}
+        {% endif %}>{{ day }}
+        </option>
+        {% endfor %}
+        </select>
+        <select name="reminder_start_hour">
+        {% for hour in hours %}
+        <option value="{{ hour }}"
+        {% if request.POST.reminder_start_hour %}
+        {% if hour == request.POST.reminder_start_hour %} selected="selected"{% endif %}
+        {% else %}
+        {% if hour == reminder_start.hour %} selected="selected"{% endif %}
+        {% endif %}>{{ hour }}
+        </option>
+        {% endfor %}
+</select>:<select name="reminder_start_minute">
+        {% for minute in minutes %}
+        <option value="{{ minute }}"
+        {% if request.POST.reminder_start_minute %}
+        {% if minute == request.POST.reminder_start_minute %} selected="selected"{% endif %}
+        {% else %}
+        {% if minute == reminder_start.minute %} selected="selected"{% endif %}
+        {% endif %}>{{ minute }}
+        </option>
+        {% endfor %}
+            </select>
+          </div>
+          <br><label>Frequency</label>
+          <select style='float: left;' name="reminder_frequency">
             <option value="never"
-              {% if request.POST.customer_read_frequency == 'never' %}
+              {% if request.POST.reminder_frequency == 'never' %}
                 selected="selected"
               {% endif %}
             >
               Never
             </option>
-            <option value="quarterly"
-              {% if request.POST.customer_read_frequency == 'quarterly' %}
-                selected="selected"
-              {% endif %}
-            >
-              Quarterly
-            </option>
             <option value="monthly"
-              {% if request.POST.customer_read_frequency == 'monthly' %}
+              {% if request.POST.reminder_frequency == 'monthly' %}
                 selected="selected"
               {% endif %}
             >
               Monthly
             </option>
+            <option value="weekly"
+              {% if request.POST.reminder_frequency == 'weekly' %}
+                selected="selected"
+              {% endif %}
+            >
+              Weekly
+            </option>
           </select>
         </fieldset>
         <br/>
-        <fieldset>
-          <legend>Sharing</legend>
-          <label>Public</label>
-          <input type="checkbox" name="is_public" value="True"
-            {% if request.POST.is_public %}checked="checked"{% endif %}
+      <fieldset>
+        <legend>Prompt to send read to supplier</legend>
+        <br>
+        <label>Frequency</label>
+        <select style='float: left;' name="customer_read_frequency">
+          <option value="never"
+            {% if request.POST.customer_read_frequency == 'never' %}
+              selected="selected"
+            {% endif %}
           >
-        </fieldset>
-        <br/>
-        <input type="submit" value="Add">
+            Never
+          </option>
+          <option value="quarterly"
+            {% if request.POST.customer_read_frequency == 'quarterly' %}
+              selected="selected"
+            {% endif %}
+          >
+            Quarterly
+          </option>
+          <option value="monthly"
+            {% if request.POST.customer_read_frequency == 'monthly' %}
+              selected="selected"
+            {% endif %}
+          >
+            Monthly
+          </option>
+        </select>
       </fieldset>
-    </form>
-  {% endif %}
+      <br/>
+      <fieldset>
+        <legend>Sharing</legend>
+        <label>Public</label>
+        <input type="checkbox" name="is_public" value="True"
+          {% if request.POST.is_public %}checked="checked"{% endif %}
+        >
+      </fieldset>
+      <br/>
+      <input type="submit" value="Add">
+    </fieldset>
+  </form>
 {% endblock %}

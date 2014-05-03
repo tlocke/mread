@@ -3,3 +3,4 @@ venv/*
 *.swp
 pid_file
 app/six.py
+app/requests

@@ -2,19 +2,23 @@
 
 {% block title %}MtrHub &gt; Meter: {{ meter.name }}{% endblock %}
 
-{% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt; Meter: {{ meter.name }}
-{% endblock %}
+{% block nav %}Meter: {{ meter.name }}{% endblock %}
 
 {% block content %}
   {% if read %}
-  <p>The <a href="/read?read_key={{ read.key }}">reading</a> has been successfully created.</p>
+    <p>
+      The <a href="/read?read_key={{ read.key() }}">reading</a> has been
+      successfully created.
+    </p>
   {% endif %}
-
-  {% if candidate_customer_read %}
-  <p><strong>Customer Read Prompt:</strong> The supplier hasn't been sent a read from this meter for a while. You could <a href="/send-read?read_key={{ candidate_customer_read.key }}">send the latest read to the supplier</a>.</p>
-          {% endif %}
-
+  {% if candidate_customer_read and current_reader and meter.reader.key() == current_reader.key() %}
+    <p>
+      <strong>Customer Read Prompt:</strong> The supplier hasn't been sent a
+      read from this meter for a while. You could
+      <a href="/send_read?read_key={{ candidate_customer_read.key() }}">send the
+      latest read to the supplier</a>.
+    </p>
+  {% endif %}
   <table>
     <tr>
       <th>Utility</th>
@@ -51,7 +55,6 @@
       </td>
     </tr>
   </table>
-
   {% if current_reader and meter.reader.key() == current_reader.key() %}
     <br>
     <table>
@@ -71,10 +74,10 @@
       {% endif %}
     </table>
     <br>
-    <form action="meter" method="post">
+    <form action="/view_meter" method="post">
       <fieldset>
         <legend>Insert Read</legend>
-        <input type="hidden" name="meter_key" value="{{ meter.key }}">
+        <input type="hidden" name="meter_key" value="{{meter.key()}}">
         {{ input_date('read', request, now) }}
         <br><br>
         <label>
@@ -86,7 +89,6 @@
       </fieldset>
     </form>
   {% endif %}
-
   <ul>
     <li>
       {% if reads|length > 1 %}

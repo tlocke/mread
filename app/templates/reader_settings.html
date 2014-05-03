@@ -5,9 +5,8 @@
 {% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt;
   <a href="/view_reader?reader_key={{ reader.key() }}">Reader:
-  {{ reader.name }}</a> &gt; Settings
+  {{reader.name}}</a> &gt; Settings
 {% endblock %}
 
 {% block content %}
@@ -26,18 +25,21 @@
       </fieldset>
     </form>
   {% else %}
-    {% if request.POST.confirm_remove_openid %}
-      <p>Are you sure you want to remove the OpenId '{{ controls.openid }}'?</p>
+    {% if request.POST.confirm_remove_email %}
+      <p>
+        Are you sure you want to remove the email address
+        '{{controls.email}}'?
+      </p>
       <form action="/reader_settings" method="post">
         <fieldset>
-          <input type="hidden" name="reader_key" value="{{ reader.key() }}">
-          <input type="hidden" name="openid" value="{{ request.POST.openid }}">
+          <input type="hidden" name="reader_key" value="{{reader.key()}}">
+          <input type="hidden" name="email" value="{{request.POST.email}}">
           <a href="/reader_settings?reader_key={{ reader.key() }}">Cancel</a>
-          <input type="submit" name="remove_openid" value="Delete">
+          <input type="submit" name="remove_email" value="Delete">
         </fieldset>
       </form>
     {% else %}
-      <form action="reader-settings" method="post">
+      <form action="/reader_settings" method="post">
         <fieldset><legend>Update Reader</legend>
           <input type="hidden" name="reader_key" value="{{ reader.key() }}">
           <label>
@@ -55,18 +57,18 @@
         </fieldset>
       </form>
       <br/>
-      <table><caption>OpenIds</caption>
-        {% for openid in reader.openids %}
+      <table><caption>Email Addresses</caption>
+        {% for email in reader.emails %}
           <tr>
-            <td>{{ openid }}</td>
-            {% if reader.openids|length > 1 %}
+            <td>{{email}}</td>
+            {% if reader.emails|length > 1 %}
               <td>
                 <form action="/reader_settings">
                   <fieldset>
                     <input type="hidden" name="reader_key"
-                        value="{{ reader.key() }}">
-                    <input type="hidden" name="openid" value="{{ openid }}">
-                    <input type="submit" name="confirm_remove_openid"
+                        value="{{reader.key()}}">
+                    <input type="hidden" name="email" value="{{email}}">
+                    <input type="submit" name="confirm_remove_email"
                         value="Delete">
                   </fieldset>
                 </form>
@@ -78,27 +80,27 @@
       <br>
       <form action="/reader_settings" method="post">
         <fieldset>
-          <legend>Propose An OpenId To Add To The List</legend>
-          <input type="hidden" name="reader_key" value="{{ reader.key() }}">
+          <legend>Propose An Email Address To Add To The List</legend>
+          <input type="hidden" name="reader_key" value="{{reader.key()}}">
           <label>
-            OpenId <input name="proposed_openid" value="
-              {%- if request.POST.proposed_openid -%}
-                {{ request.POST.proposed_openid }}
+            Email Address <input name="proposed_email" value="
+              {%- if request.POST.proposed_email -%}
+                {{ request.POST.proposed_email }}
               {%- else -%}
-                {{ reader.proposed_openid }}
+                {{ reader.proposed_email }}
               {%- endif -%}
             ">
           </label>
           <br>
           <br>
-          <input type="submit" name="propose_openid" value="Propose">
+          <input type="submit" name="propose_email" value="Propose">
         </fieldset>
       </form>
       <br>
       <form action="/reader_settings">
         <fieldset>
           <legend>Delete This Reader And All Associated Data</legend>
-          <input type="hidden" name="/reader_key" value="{{ reader.key() }}">
+          <input type="hidden" name="reader_key" value="{{reader.key()}}">
           <input type="submit" name="delete" value="Delete">
         </fieldset>
       </form>

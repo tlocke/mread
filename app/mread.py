@@ -1,6 +1,6 @@
 import jinja2
 import webapp2
-from google.appengine.api import users, mail
+from google.appengine.api import mail
 import datetime
 import csv
 import dateutil.relativedelta
@@ -8,16 +8,33 @@ import dateutil.rrule
 import pytz
 import string
 import random
+import markupsafe
+import urllib
+import requests
+import json
 from webapp2_extras import sessions
-from models import (
-    Meter, Read, UserException, Reader, UTILITY_LIST, Configuration,
-    get_federated_identity)
-
+from webob.exc import HTTPBadRequest
+from models import Meter, Read, Reader, UTILITY_LIST, Configuration
+import logging
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader('templates'))
 
-MIME_MAP = {'html': 'text/html', 'atom': 'application/atom+xml'}
+
+def urlencode_filter(s):
+    if type(s) == 'Markup':
+        s = s.unescape()
+    s = s.encode('utf8')
+    s = urllib.quote_plus(s)
+    return markupsafe.Markup(s)
+
+jinja_environment.filters['urlencode'] = urlencode_filter
+
+MIME_MAP = {
+    'html': 'text/html',
+    'atom': 'application/atom+xml',
+    'csv': 'text/csv',
+}
 
 
 class MReadHandler(webapp2.RequestHandler):
@@ -37,11 +54,10 @@ class MReadHandler(webapp2.RequestHandler):
         self.session.add_flash(message)
 
     def return_template(self, status, template_values):
-        user = users.get_current_user()
-        if user is not None:
-            template_values['user'] = user
-            template_values['signout_url'] = users.create_logout_url('/')
-            reader = Reader.find_current_reader()
+        user_email = self.find_current_email()
+        if user_email is not None:
+            template_values['user_email'] = user_email
+            reader = self.find_current_reader()
             if reader is not None:
                 template_values['current_reader'] = reader
         self.response.status = status
@@ -53,40 +69,45 @@ class MReadHandler(webapp2.RequestHandler):
         flashes = [flash[0] for flash in self.session.get_flashes()]
         mime_type = MIME_MAP[template_name.split('.')[-1]]
         self.response.headers['Content-Type'] = mime_type
+        try:
+            self.response.headers['Content-Disposition'] = \
+                template_values['content_disposition']
+        except KeyError:
+            pass
         template = jinja_environment.get_template(template_name)
         self.response.out.write(
             template.render(
                 request=self.request, flashes=flashes, **template_values))
 
-    def send_ok(self, template_values):
+    def return_ok(self, template_values):
         self.return_template('200 OK', template_values)
 
-    def send_found(self, location):
+    def return_found(self, location):
         self.redirect(location, 302)
 
-    def send_bad_request(self, template_values):
+    def return_bad_request(self, template_values):
         self.return_template('400 BAD REQUEST', template_values)
 
     def return_unauthorized(self):
         self.abort(401)
 
-    def send_forbidden(self):
+    def return_forbidden(self):
         self.abort(403)
 
-    def send_see_other(self, location):
+    def return_see_other(self, location):
         self.redirect(location, code=303)
 
     def get_str(self, name):
         try:
             return self.request.GET[name]
         except KeyError:
-            raise UserException("The field " + name + " is needed.")
+            raise HTTPBadRequest("The field " + name + " is needed.")
 
     def post_str(self, name):
         try:
             return self.request.POST[name]
         except KeyError:
-            raise UserException("The field " + name + " is needed.")
+            raise HTTPBadRequest("The field " + name + " is needed.")
 
     def post_datetime(self, prefix, tzinfo=None):
         try:
@@ -103,7 +124,7 @@ class MReadHandler(webapp2.RequestHandler):
                 return pytz.utc.normalize(
                     local_dt.astimezone(pytz.utc)).replace(tzinfo=None)
         except ValueError, e:
-            raise UserException(str(e))
+            raise HTTPBadRequest(str(e))
 
     def post_int(self, name):
         return int(self.post_str(name))
@@ -112,16 +133,89 @@ class MReadHandler(webapp2.RequestHandler):
         try:
             return float(self.post_str(name))
         except ValueError:
-            raise UserException(
+            raise HTTPBadRequest(
                 "The '" + name + "' field doesn't seem to be a number.")
 
+    def find_current_reader(self):
+        user_email = self.find_current_email()
+        if user_email is None:
+            return None
+        else:
+            return Reader.gql("where emails = :1", user_email).get()
+
     def require_current_reader(self):
-        reader = Reader.find_current_reader()
+        reader = self.find_current_reader()
 
         if reader is None:
             self.return_unauthorized()
         else:
             return reader
+
+    def find_current_email(self):
+        if 'user_email' in self.session:
+            return self.session['user_email']
+        else:
+            return None
+
+
+class SignIn(MReadHandler):
+    def post(self):
+        # The request has to have an assertion for us to verify
+        if 'assert' not in self.request.POST:
+            self.abort(400, detail="parameter 'assert' is required.")
+        server_name = self.request.server_name
+        if 'user_email' in self.request.POST and server_name == 'localhost':
+            user_email = self.post_str('user_email')
+            self.session['user_email'] = user_email
+            return "You are logged in."
+        else:
+            # Send the assertion to Mozilla's verifier service.
+            audience = self.request.scheme + "://" + server_name + ":" + \
+                str(self.request.server_port)
+            data = {'assertion': self.request.POST['assert'],
+                    'audience': audience}
+            resp = requests.post(
+                'https://verifier.login.persona.org/verify',
+                data=data, verify=True)
+
+            # Did the verifier respond?
+            if resp.ok:
+                # Parse the response
+                verification_data = json.loads(resp.content)
+
+                # Check if the assertion was valid
+                if verification_data['status'] == 'okay':
+                    # Log the user in by setting a secure session cookie
+                    self.session['user_email'] = verification_data['email']
+                    return 'You are logged in'
+            logging.error("server replied " + resp.content)
+            # Oops, something failed. Abort.
+            self.abort(500)
+
+
+class SignOut(MReadHandler):
+    def get(self):
+        if 'user_email' in self.session:
+            del self.session['user_email']
+        return "Logged out."
+
+
+class AddReader(MReadHandler):
+    def post(self):
+        user_email = self.find_current_email()
+        current_reader = self.find_current_reader()
+        if current_reader is None:
+            name = self.post_str('name')
+            reader = Reader.all(keys_only=True).filter('name', name).get()
+            if reader is not None:
+                raise HTTPBadRequest("I'm afraid that name's already taken.")
+            current_reader = Reader(emails=[user_email], name=name)
+            current_reader.put()
+            self.add_flash("Account created successfully.")
+            self.return_see_other('/')
+        else:
+            self.add_flash("You've already got an account!")
+            self.return_return_see_other('/')
 
 
 class ViewReader(MReadHandler):
@@ -130,9 +224,9 @@ class ViewReader(MReadHandler):
         reader = Reader.get_reader(reader_key)
         current_reader = self.require_current_reader()
         if current_reader.key() != reader.key():
-            self.send_forbidden()
+            self.return_forbidden()
 
-        self.send_ok(
+        self.return_ok(
             {
                 'reader': reader,
                 'meters': Meter.gql(
@@ -143,6 +237,15 @@ FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
 
 
 class Home(MReadHandler):
+    for reader in Reader.all():
+        #delattr(reader, 'openids')
+        #if hasattr(reader, 'proposed_openid'):
+        try:
+            delattr(reader, 'proposed_openid')
+            reader.put()
+        except AttributeError:
+            pass
+        #reader.proposed_email = ''
     '''
     for editor in Editor.all():
         reader = Reader(name=editor.name, openids=[editor.openid])
@@ -198,115 +301,72 @@ class Home(MReadHandler):
                 break
 
         fields = {'public_reads': public_reads}
-        user = users.get_current_user()
-        if user is not None:
-            current_reader = Reader.find_current_reader()
-            if current_reader is not None:
-                reader_meters = Meter.gql(
-                    "where reader = :1", current_reader).fetch(10)
-                fields['meters'] = reader_meters
-                fields['candidate_customer_reads'] = [
-                    cand for cand in [
-                        meter.candidate_customer_read() for meter in
-                        reader_meters] if cand is not None]
-        self.send_ok(fields)
-
-
-class SignIn(MReadHandler):
-    def get(self):
-        if users.get_current_user() is None:
-            if 'free_openid' in self.request.GET:
-                try:
-                    openid = self.get_str('openid_identifier')
-                except UserException as e:
-                    e.values = self.page_fields()
-                    raise e
-
-                self.send_found(
-                    users.create_login_url(
-                        dest_url="/welcome", federated_identity=openid))
-            else:
-                self.send_ok(self.page_fields())
-        else:
-            self.send_found('/welcome')
-
-    def page_fields(self):
-        fields = {'providers': []}
-        for url, name, img_name in [
-                ('https://www.google.com/accounts/o8/id', 'Google', 'google'),
-                ('yahoo.com', 'Yahoo', 'yahoo'),
-                ('myspace.com', 'MySpace', 'myspace'),
-                ('aol.com', 'AOL', 'aol'),
-                ('myopenid.com', 'MyOpenID', 'myopenid')]:
-            fields['providers'].append(
-                {
-                    'name': name,
-                    'url': users.create_login_url(
-                        dest_url="/welcome", federated_identity=url),
-                    'img_name': img_name})
-        return fields
+        current_reader = self.find_current_reader()
+        if current_reader is not None:
+            reader_meters = Meter.gql(
+                "where reader = :1", current_reader).fetch(10)
+            fields['meters'] = reader_meters
+            fields['candidate_customer_reads'] = [
+                cand for cand in [
+                    mtr.candidate_customer_read() for mtr in reader_meters]
+                if cand is not None]
+        self.return_ok(fields)
 
 
 class Welcome(MReadHandler):
     def get(self):
-        user = users.get_current_user()
-        if user is None:
-            self.send_ok(self.page_fields(None))
+        user_email = self.find_current_email()
+        if user_email is None:
+            self.return_ok({})
         else:
-            current_reader = Reader.find_current_reader()
+            current_reader = self.find_current_reader()
             if current_reader is None:
-                fields = self.page_fields(None)
+                fields = {}
                 proposed_readers = Reader.gql(
-                    "where proposed_openid = :1",
-                    get_federated_identity(user)).fetch(10)
+                    "where proposed_email = :1",
+                    user_email).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
-                self.send_ok(fields)
+                self.return_ok(fields)
             else:
-                self.send_found('/')
+                if 'return_to' in self.request.GET:
+                    return_to = self.get_str('return_to')
+                else:
+                    return_to = "/"
+                self.return_found(return_to)
 
     def post(self):
-        user = users.get_current_user()
-        if user is None:
+        user_email = self.find_current_email()
+        if user_email is None:
             self.return_unauthorized()
 
-        fi = get_federated_identity(user)
         if 'associate' in self.request.POST:
-            current_reader = Reader.find_current_reader()
+            current_reader = self.find_current_reader()
             if current_reader is None:
                 reader_key = self.post_str('reader_key')
                 reader = Reader.get_reader(reader_key)
-                if reader.proposed_openid == fi:
-                    reader.proposed_openid = ''
-                    reader.openids.append(fi)
+                if reader.proposed_email == user_email:
+                    reader.proposed_email = ''
+                    reader.emails.append(user_email)
                     reader.put()
-                    self.add_flash(
-                        'The OpenId ' + fi + " has been successfully "
-                        "associated with this reader.")
-                    self.send_see_other(
+                    self.add_flash('The email address ' + user_email + """ has
+                            been successfully associated with this reader.""")
+                    self.return_see_other(
                         '/view_reader?reader_key=' + str(reader.key()))
                 else:
-                    self.send_ok(
-                        message="Can't associate " + fi +
-                        " with the account " + reader.name +
-                        " because the OpenId you're signed in with "
-                        "doesn't match the proposed OpenId.")
+                    self.return_ok(
+                        messages=[
+                            "Can't associate " + user_email +
+                            " with the account " + reader.name + """ because
+                            the email address you're signed in with doesn't
+                            match the proposed email address."""])
             else:
-                self.send_bad_request(
-                    message="The OpenId " + fi +
-                    " is already associated with an account.")
+                self.return_bad_request(
+                    messages=[
+                        "The email address " + user_email +
+                        """ is already associated with an account."""])
         else:
-            current_reader = Reader.find_current_reader()
-            if current_reader is None:
-                current_reader = Reader(openids=[fi], name=user.nickname())
-                current_reader.put()
-                self.add_flash("Account created successfully.")
-
-            self.send_see_other('/')
-
-    def page_fields(self, current_reader):
-        meters = Meter.gql("where reader = :1", current_reader).fetch(10)
-        return {'meters': meters}
+            self.return_see_other('/')
 
 
 class ViewMeter(MReadHandler):
@@ -314,12 +374,12 @@ class ViewMeter(MReadHandler):
         meter_key = self.get_str("meter_key")
         meter = Meter.get_meter(meter_key)
         if meter.is_public:
-            current_reader = Reader.find_current_reader()
+            current_reader = self.find_current_reader()
         else:
             current_reader = self.require_current_reader()
             if current_reader.key() != meter.reader.key():
                 self.return_forbidden()
-        self.send_ok(self.page_fields(meter, current_reader))
+        self.return_ok(self.page_fields(meter, current_reader))
 
     def post(self):
         current_reader = self.require_current_reader()
@@ -334,10 +394,10 @@ class ViewMeter(MReadHandler):
             read = Read(meter=meter, read_date=read_date, value=value)
             read.put()
             fields = self.page_fields(meter, current_reader)
-            fields['read'] = read.key()
-            self.send_ok(fields)
-        except UserException as e:
-            self.send_bad_request(self.page_fields(meter, current_reader, e))
+            fields['read'] = read
+            self.return_ok(fields)
+        except HTTPBadRequest as e:
+            self.return_bad_request(self.page_fields(meter, current_reader, e))
 
     def page_fields(self, meter, current_reader, message=None):
         reads = Read.gql(
@@ -352,7 +412,7 @@ class ViewMeter(MReadHandler):
 class AddMeter(MReadHandler):
     def get(self):
         current_reader = self.require_current_reader()
-        self.send_ok(self.page_fields(current_reader))
+        self.return_ok(self.page_fields(current_reader))
 
     def post(self):
         try:
@@ -371,7 +431,7 @@ class AddMeter(MReadHandler):
                 confirm_email_address = self.post_str('confirm_email_address')
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
-                    raise UserException("The email addresses don't match.")
+                    raise HTTPBadRequest("The email addresses don't match.")
             customer_read_frequency = self.post_str('customer_read_frequency')
 
             meter = Meter(
@@ -385,11 +445,9 @@ class AddMeter(MReadHandler):
             meter.update(
                 utility_id, units, name, time_zone, is_public, email_address,
                 reminder_start, reminder_frequency, customer_read_frequency)
-            fields = self.page_fields(current_reader)
-            fields['location'] = '/meter?meter_key=' + str(meter.key())
-            self.send_ok(fields)
-        except UserException as e:
-            self.send_bad_request(self.page_fields(current_reader, e))
+            self.return_see_other('/view_meter?meter_key=' + str(meter.key()))
+        except HTTPBadRequest as e:
+            self.return_bad_request(self.page_fields(current_reader, e))
 
     def page_fields(self, current_reader, message=None):
         reminder_start = datetime.datetime.now()
@@ -418,18 +476,18 @@ class AddMeter(MReadHandler):
 
 class SendRead(MReadHandler):
     def get(self):
-        current_reader = Reader.require_current_reader()
+        current_reader = self.require_current_reader()
         read_key = self.get_str('read_key')
         read = Read.get_read(read_key)
         if current_reader.key() != read.meter.reader.key():
             self.return_forbidden()
-        self.send_ok(self.page_fields(current_reader, read))
+        self.return_ok(self.page_fields(current_reader, read))
 
     def post(self):
+        current_reader = self.require_current_reader()
+        read_key = self.post_str('read_key')
+        read = Read.get_read(read_key)
         try:
-            current_reader = self.require_current_reader()
-            read_key = self.post_str('read_key')
-            read = Read.get_read(read_key)
             meter = read.meter
             if current_reader.key() != meter.reader.key():
                 self.return_forbidden()
@@ -448,11 +506,11 @@ class SendRead(MReadHandler):
                 meter.put()
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Info updated successfully."
-                self.send_ok(fields)
+                self.return_ok(fields)
             else:
                 if meter.send_read_to is None or len(meter.send_read_to) == 0:
-                    raise UserException("""The supplier's email address must be
-                            filled in.""")
+                    raise HTTPBadRequest(
+                        """The supplier's email address must be filled in.""")
                 body = jinja2.Template("""Hi, I'd like to submit a \
 reading for my {{ read.meter.utility_id }} meter. Details below:
 
@@ -477,13 +535,15 @@ Reading: {{ read.value }} {{ read.meter.units }}""").render(read=read)
 
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = "Reading sent successfully."
-                self.send_ok(fields)
-        except UserException as e:
-            e.values = self.page_fields(current_reader, read)
-            raise e
+                self.return_ok(fields)
+        except HTTPBadRequest as e:
+            self.return_bad_request(self.page_fields(current_reader, read, e))
 
-    def page_fields(self, current_reader, read):
-        return {'read': read, 'current_reader': current_reader}
+    def page_fields(self, current_reader, read, e=None):
+        fields = {'read': read, 'current_reader': current_reader}
+        if e is not None:
+            fields['message'] = str(e)
+        return fields
 
 
 class ExportReads(MReadHandler):
@@ -491,20 +551,18 @@ class ExportReads(MReadHandler):
         meter_key = self.get_str("meter_key")
         meter = Meter.get_meter(meter_key)
         if meter.is_public:
-            current_reader = Reader.get_current_reader()
+            current_reader = self.find_current_reader()
         else:
-            current_reader = Reader.require_current_reader()
+            current_reader = self.require_current_reader()
             if current_reader.key() != meter.reader.key():
                 self.return_forbidden()
 
         reads = Read.gql(
             "where meter = :1 order by read_date desc", meter).fetch(1000)
-        self.send_ok(
+        self.return_ok(
             {
                 'reads': reads,
-                'template-name': 'export_reads.csv',
-                'content-type': 'text/csv',
-                'content-disposition': 'attachment; filename=reads.csv;'})
+                'content_disposition': 'attachment; filename=reads.csv;'})
 
 
 class MeterSettings(MReadHandler):
@@ -514,7 +572,7 @@ class MeterSettings(MReadHandler):
         reader = self.require_current_reader()
         if reader.key() != meter.reader.key():
             self.return_forbidden()
-        self.send_ok(self.page_fields(meter, reader))
+        self.return_ok(self.page_fields(meter, reader))
 
     def post(self):
         current_reader = self.require_current_reader()
@@ -528,7 +586,7 @@ class MeterSettings(MReadHandler):
                 fields = self.page_fields(meter, current_reader)
                 meter.delete_meter()
                 fields['message'] = 'Meter deleted successfully.'
-                self.send_see_other('/')
+                self.return_see_other('/')
             else:
                 is_public = 'is_public' in self.request.POST
                 email_address = self.post_str('email_address')
@@ -543,7 +601,7 @@ class MeterSettings(MReadHandler):
                 utility_id, units = utility_units.split('-')
                 email_address = email_address.strip()
                 if email_address != confirm_email_address.strip():
-                    raise UserException("The email addresses don't match")
+                    raise HTTPBadRequest("The email addresses don't match")
                 customer_read_frequency = self.post_str(
                     'customer_read_frequency')
                 meter.update(
@@ -552,9 +610,9 @@ class MeterSettings(MReadHandler):
                     customer_read_frequency)
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'Settings updated successfully.'
-                self.send_ok(fields)
-        except UserException as e:
-            self.send_bad_request(
+                self.return_ok(fields)
+        except HTTPBadRequest as e:
+            self.return_bad_request(
                 self.page_fields(meter, current_reader, str(e)))
 
     def page_fields(self, meter, current_reader, message=None):
@@ -578,10 +636,10 @@ class ReaderSettings(MReadHandler):
     def get(self):
         reader_key = self.get_str("reader_key")
         reader = Reader.get_reader(reader_key)
-        current_reader = Reader.require_current_reader()
+        current_reader = self.require_current_reader()
         if current_reader.key() != reader.key():
             self.return_forbidden()
-        self.send_ok(self.page_fields(reader))
+        self.return_ok(self.page_fields(reader))
 
     def post(self):
         try:
@@ -591,28 +649,30 @@ class ReaderSettings(MReadHandler):
             if current_reader.key() != reader.key():
                 self.return_forbidden()
 
-            if 'remove_openid' in self.request.POST:
-                openid = self.get_str('openid')
-                if openid in reader.openids:
-                    reader.openids.remove(openid)
+            if 'remove_email' in self.request.POST:
+                email = self.get_str('email')
+                if email in reader.emails:
+                    reader.emails.remove(email)
                     reader.put()
                     fields = self.page_fields(reader)
-                    fields['message'] = "Successfully removed OpenId."
-                    self.send_ok(fields)
+                    fields['message'] = "Successfully removed email address."
+                    self.return_ok(fields)
                 else:
-                    raise UserException("""That OpenId isn't associated with
+                    raise HTTPBadRequest("""That email isn't associated with
                             the reader.""")
 
-            elif 'propose_openid' in self.request.POST:
-                proposed_openid = self.post_str('proposed_openid')
-                reader.proposed_openid = proposed_openid.strip()
+            elif 'proposed_email' in self.request.POST:
+                proposed_email = self.post_str('proposed_email')
+                reader.proposed_email = proposed_email.strip()
                 reader.put()
-                if len(proposed_openid) == 0:
-                    message = "Proposed OpenId successfully set to blank."
+                if len(proposed_email) == 0:
+                    message = """Proposed email address successfully set to
+                        blank."""
                 else:
-                    message = """Proposed OpenId set successfully. Now sign out
-                            and then sign in using the proposed OpenId"""
-                self.send_ok(self.page_fields(reader, message))
+                    message = """Proposed email address set successfully. Now
+                        sign out and then sign in using the proposed email
+                        address"""
+                self.return_ok(self.page_fields(reader, message))
             elif 'delete' in self.request.POST:
                 for meter in Meter.gql("where reader = :1", reader):
                     meter.delete_meter()
@@ -623,14 +683,16 @@ class ReaderSettings(MReadHandler):
                 reader.name = name
                 reader.put()
                 self.add_flash('Settings updated successfully.')
-                self.send_see_other(
+                self.return_see_other(
                     '/view_reader?reader_key=' + str(reader.key()))
-        except UserException as e:
-            self.send_bad_request(self.page_fields(reader, str(e)))
+        except HTTPBadRequest as e:
+            self.return_bad_request(self.page_fields(reader, str(e)))
 
     def page_fields(self, reader, message=None):
-        return {'reader': reader, 'current_reader': reader,
-                'messages': [] if message is None else [message]}
+        fields = {'reader': reader, 'current_reader': reader}
+        if message is not None:
+            fields['message'] = message
+        return fields
 
 
 class Upload(MReadHandler):
@@ -641,11 +703,11 @@ class Upload(MReadHandler):
         if current_reader.key() != meter.reader.key():
             self.return_forbidden()
 
-        self.send_ok(self.page_fields(meter, current_reader))
+        self.return_ok(self.page_fields(meter, current_reader))
 
     def post(self):
         try:
-            current_reader = Reader.require_current_reader()
+            current_reader = self.require_current_reader()
             meter_key = self.post_str("meter_key")
             meter = Meter.get_meter(meter_key)
             if current_reader.key() != meter.reader.key():
@@ -656,14 +718,14 @@ class Upload(MReadHandler):
                 rdr = csv.reader(file_item.file)
                 for row in rdr:
                     if len(row) < 2:
-                        raise UserException("""Expecting 2 fields per row, the
+                        raise HTTPBadRequest("""Expecting 2 fields per row, the
                                 date in the format yyyy-MM-dd HH:mm followed by
                                 the reading.""")
                     try:
                         read_date = datetime.datetime.strptime(
                             row[0].strip(), '%Y-%m-%d %H:%M')
                     except ValueError as e:
-                        raise UserException(
+                        raise HTTPBadRequest(
                             "Problem at line number " + str(rdr.line_num) +
                             " of the file. The first field (the read date "
                             "field) isn't formatted correctly, it should be "
@@ -673,10 +735,10 @@ class Upload(MReadHandler):
                     read.put()
                 fields = self.page_fields(meter, current_reader)
                 fields['message'] = 'File imported successfully.'
-                self.send_ok(fields)
+                self.return_ok(fields)
             else:
-                raise UserException("The file name must end with '.csv.'")
-        except UserException as e:
+                raise HTTPBadRequest("The file name must end with '.csv.'")
+        except HTTPBadRequest as e:
             e.values = self.page_fields(meter, current_reader)
             raise e
 
@@ -686,7 +748,7 @@ class Upload(MReadHandler):
 
 class Chart(MReadHandler):
     def get(self):
-        self.send_ok(self.page_fields())
+        self.return_ok(self.page_fields())
 
     def kwh(self, meter, start_date, finish_date):
         sum_kwh = 0
@@ -738,22 +800,22 @@ class Chart(MReadHandler):
             '"' + datetime.datetime.strftime(month['start_date'], '%b %Y') +
             '"' for month in months)
         data = ','.join(str(round(month['kwh'], 2)) for month in months)
-        return {'current_reader': Reader.find_current_reader(),
+        return {'current_reader': self.find_current_reader(),
                 'meter': meter, 'data': data, 'labels': labels}
 
 
 class ViewRead(MReadHandler):
     def get(self):
-        current_reader = Reader.find_current_reader()
+        current_reader = self.find_current_reader()
         read_key = self.get_str("read_key")
         read = Read.get_read(read_key)
         meter = read.meter
         if meter.is_public:
-            self.send_ok(self.page_fields(current_reader, read))
+            self.return_ok(self.page_fields(current_reader, read))
         elif current_reader is None:
             self.return_unauthorized()
         elif current_reader.key() == meter.reader.key():
-            self.send_ok(self.page_fields(current_reader, read))
+            self.return_ok(self.page_fields(current_reader, read))
         else:
             self.return_forbidden()
 
@@ -766,7 +828,7 @@ class EditRead(MReadHandler):
         current_reader = self.require_current_reader()
         read_key = self.get_str("read_key")
         read = Read.get_read(read_key)
-        self.send_ok(self.page_fields(current_reader, read))
+        self.return_ok(self.page_fields(current_reader, read))
 
     def post(self):
         current_reader = self.require_current_reader()
@@ -779,7 +841,7 @@ class EditRead(MReadHandler):
 
             if 'delete' in self.request.POST:
                 read.delete()
-                self.send_see_other(
+                self.return_see_other(
                     "/view_meter?meter_key=" + str(meter.key()))
             else:
                 read_date = self.post_datetime("read")
@@ -787,9 +849,9 @@ class EditRead(MReadHandler):
                 read.update(read_date, value)
                 fields = self.page_fields(current_reader, read)
                 fields['message'] = 'Read edited successfully.'
-                self.send_ok(fields)
-        except UserException as e:
-            self.send_bad_request(self.page_fields(current_reader, read, e))
+                self.return_ok(fields)
+        except HTTPBadRequest as e:
+            self.return_bad_request(self.page_fields(current_reader, read, e))
 
     def page_fields(self, current_reader, read, message=None):
         days = [
@@ -819,7 +881,7 @@ class Cron(MReadHandler):
         return {}
 
     def get(self):
-        self.send_ok(self.page_fields())
+        self.return_ok(self.page_fields())
 
 
 class Reminders(MReadHandler):
@@ -846,16 +908,19 @@ MtrHub.
                 body=body)
             meter.set_next_reminder()
             meter.put()
-        self.send_ok({})
+        self.return_ok({})
 
 routes = [
-    (r'/', Home), (r'/sign_in', SignIn), (r'/view_meter', ViewMeter),
+    (r'/', Home), (r'/xhr/sign_in', SignIn), (r'/view_meter', ViewMeter),
     (r'/view_read', ViewRead), (r'/edit_read', EditRead),
     (r'/send_read', SendRead), (r'/upload', Upload), (r'/chart', Chart),
     (r'/meter_settings', MeterSettings), (r'/view_reader', ViewReader),
     (r'/reader_settings', ReaderSettings), (r'/welcome', Welcome),
     (r'/export_reads', ExportReads), (r'/add_meter', AddMeter),
-    (r'/cron', Cron), (r'/cron/reminders', Reminders)]
+    (r'/cron', Cron), (r'/cron/reminders', Reminders),
+    (r'/xhr/sign_out', SignOut), (r'/add_reader', AddReader),
+]
+
 template_names = dict(
     [(cls.__name__, rt[1:] + '.html') for rt, cls in routes if rt != '/'])
 template_names['Home'] = 'home.html'
