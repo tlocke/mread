@@ -237,16 +237,13 @@ FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
 
 
 class Home(MReadHandler):
+    '''
     for reader in Reader.all():
-        #delattr(reader, 'openids')
-        #if hasattr(reader, 'proposed_openid'):
         try:
             delattr(reader, 'proposed_openid')
             reader.put()
         except AttributeError:
             pass
-        #reader.proposed_email = ''
-    '''
     for editor in Editor.all():
         reader = Reader(name=editor.name, openids=[editor.openid])
         reader.put()

@@ -19,6 +19,7 @@ UTILITY_DICT = {'electricity':
 UTILITY_IDS = UTILITY_DICT.keys()
 
 UTILITY_LIST = [val for val in UTILITY_DICT.values()]
+FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
 
 class Configuration(db.Model):
     session_key = db.StringProperty(required=True)
