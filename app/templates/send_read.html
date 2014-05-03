@@ -13,10 +13,9 @@
 {% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt;
-  <a href="/meter?meter_key={{ read.meter.key() }}">Meter:
+  <a href="/view_meter?meter_key={{read.meter.key()}}">Meter:
   {{ read.meter.name }}</a> &gt;
-  <a href="/read?read_key={{ read.key() }}">Read
+  <a href="/view_read?read_key={{ read.key() }}">Read
   {{ read.local_read_date().strftime("%Y-%m-%d  %H:%M") }}</a> &gt; Send
 {% endblock %}
 
@@ -43,7 +42,7 @@
       <br>
       <label>First line of address of meter</label>
       {{ input_text('send_read_read_address', request,
-        read.meter.send_read_read_address) }}
+        read.meter.send_read_address) }}
       <br>
       <label>Postcode of meter</label>
       {{ input_text('send_read_postcode', request,

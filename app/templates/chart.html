@@ -43,9 +43,12 @@
       google.setOnLoadCallback(drawVisualization);
     </script>
 {% endblock %}
-{% block nav %}
-<a id="logo" href="/">MtrHub</a>
-&gt; <a href="/meter?meter_key={{ meter.key }}">Meter: {{ meter.name }}</a> &gt; Chart{% endblock %} {% block content %} 
 
-<div id="visualization" style="width: 1000px; height: 400px;"></div>
+{% block nav %}
+  <a href="/view_meter?meter_key={{meter.key()}}">Meter: {{meter.name}}</a>
+  &gt; Chart
+{% endblock %}
+
+{% block content %} 
+  <div id="visualization" style="width: 1000px; height: 400px;"></div>
 {% endblock %}
