@@ -233,9 +233,6 @@ class ViewReader(MReadHandler):
                     "where reader = :1", current_reader).fetch(10)})
 
 
-FREQS = {'monthly': dateutil.rrule.MONTHLY, 'weekly': dateutil.rrule.WEEKLY}
-
-
 class Home(MReadHandler):
     '''
     for reader in Reader.all():
@@ -559,6 +556,7 @@ class ExportReads(MReadHandler):
         self.return_ok(
             {
                 'reads': reads,
+                'template_name': 'export_reads.csv',
                 'content_disposition': 'attachment; filename=reads.csv;'})
 
 
@@ -889,7 +887,7 @@ class Reminders(MReadHandler):
             body = jinja2.Template("""
 Hi,
 
-This is a reminder from MtrHub to read your {{ meter.utility.id }} meter \
+This is a reminder from MtrHub to read your {{ meter.utility_id }} meter \
 {{ meter.name }}. To change the settings, log in to:
 
 http://www.mtrhub.com/

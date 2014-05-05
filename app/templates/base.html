@@ -13,11 +13,11 @@
 
     {% macro input_date(prefix, request, initial, resolution='minute') -%}
       {%- if prefix != None -%}
-        {%- set year_field = prefix + '-year' -%}
-        {%- set month_field = prefix + '-month' -%}
-        {%- set day_field = prefix + '-day' -%}
-        {%- set hour_field = prefix + '-hour' -%}
-        {%- set minute_field = prefix + '-minute' -%}
+        {%- set year_field = prefix + '_year' -%}
+        {%- set month_field = prefix + '_month' -%}
+        {%- set day_field = prefix + '_day' -%}
+        {%- set hour_field = prefix + '_hour' -%}
+        {%- set minute_field = prefix + '_minute' -%}
       {%- else -%}
         {%- set year_field = 'year' -%}
         {%- set month_field = 'month' -%}
