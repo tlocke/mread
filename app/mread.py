@@ -285,7 +285,7 @@ class Home(MReadHandler):
         meters = {}
         public_reads = []
 
-        for read in Read.gql("order by read_date desc"):
+        for read in Read.gql("order by read_date desc limit 50"):
             meter = read.meter
             if not meter.is_public or str(meter.key()) in meters:
                 continue
