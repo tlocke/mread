@@ -1,6 +1,7 @@
 import jinja2
 import webapp2
 from google.appengine.api import mail
+from google.appengine.api import urlfetch
 import datetime
 import csv
 import dateutil.relativedelta
@@ -10,7 +11,6 @@ import string
 import random
 import markupsafe
 import urllib
-import requests
 import json
 from webapp2_extras import sessions
 from webob.exc import HTTPBadRequest
@@ -174,7 +174,7 @@ class SignIn(MReadHandler):
                 str(self.request.server_port)
             data = {'assertion': self.request.POST['assert'],
                     'audience': audience}
-            resp = requests.post(
+            resp = urlfetch.fetch(
                 'https://verifier.login.persona.org/verify',
                 data=data, verify=True)
 
@@ -203,6 +203,7 @@ class SignOut(MReadHandler):
 class AddReader(MReadHandler):
     def post(self):
         user_email = self.find_current_email()
+        print("user email", user_email)
         current_reader = self.find_current_reader()
         if current_reader is None:
             name = self.post_str('name')
@@ -767,15 +768,16 @@ class Chart(MReadHandler):
                     self.total_seconds(read.read_date - first_read.read_date)
                 sum_kwh += rate * max(
                     self.total_seconds(
-                        min(read.read_date, finish_date)
-                        - max(first_read.read_date, start_date)), 0)
+                        min(read.read_date, finish_date) -
+                        max(first_read.read_date, start_date)), 0)
             first_read = read
         return {'kwh': sum_kwh, 'code': code, 'start_date': start_date,
                 'finish_date': finish_date}
 
     def total_seconds(self, td):
-        return (td.microseconds + (td.seconds + td.days * 24 * 3600)
-                * 10 ** 6) / 10 ** 6
+        return (
+            td.microseconds + (td.seconds + td.days * 24 * 3600) * 10 ** 6) / \
+            10 ** 6
 
     def page_fields(self):
         meter_key = self.get_str("meter_key")

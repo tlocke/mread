@@ -4,3 +4,4 @@ venv/*
 pid_file
 app/six.py
 app/requests
+app/urllib3

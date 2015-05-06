@@ -12,4 +12,4 @@ until curl --silent http://localhost:8080/ > /dev/null
 do
 	sleep 1
 done
-java -jar ~/java/imprimatur-022/imprimatur.jar test/imprimatur.xml
+imprimatur test/imprimatur.py
