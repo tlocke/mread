@@ -172,14 +172,18 @@ class SignIn(MReadHandler):
             # Send the assertion to Mozilla's verifier service.
             audience = self.request.scheme + "://" + server_name + ":" + \
                 str(self.request.server_port)
-            data = {'assertion': self.request.POST['assert'],
-                    'audience': audience}
+            data = urllib.urlencode(
+                {
+                    'assertion': self.request.POST['assert'],
+                    'audience': audience})
             resp = urlfetch.fetch(
                 'https://verifier.login.persona.org/verify',
-                data=data, verify=True)
+                payload=data,
+                method=urlfetch.POST,
+                headers={'Content-Type': 'application/x-www-form-urlencoded'})
 
             # Did the verifier respond?
-            if resp.ok:
+            if resp.status_code == 200:
                 # Parse the response
                 verification_data = json.loads(resp.content)
 

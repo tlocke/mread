@@ -53,9 +53,8 @@
         'path': "/view_meter?meter_key="
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
         'regexes': [
-            '&lt;a id="signout" '
-            'href="javascript:void\(0\)"&gt;Sign Out&lt;/a&gt;',
-            '&gt;Test&lt;'],
+            '<a id="signout" href="javascript:void\(0\)">Sign Out</a>',
+            '>Test<'],
         'status_code': 200},
 
     {
@@ -63,9 +62,9 @@
         'path': "/meter_settings?"
         "meter_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
         'regexes': [
-            '&gt;Test&lt;',
-            '&lt;option value="electricity-kWh" '
-            'selected&gt;Electricity - kWh&lt;/option&gt;'],
+            '>Test<',
+            '<option value="electricity-kWh" '
+            'selected>Electricity - kWh</option>'],
         'status_code': 200},
     {
         'name': "Insert a read.",
@@ -93,7 +92,7 @@
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA",
         'status_code': 200,
         'regexes': [
-            '&lt;legend&gt;Delete This Read&lt;/legend&gt;\s*&lt;input '
+            '<legend>Delete This Read</legend>\s*<input '
             'type="hidden" name="read_key" '
             'value="ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA"']},
     {
@@ -155,8 +154,9 @@
         'name': "Have a look at the upload page.",
         'path': "/upload?meter_key="
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
-        'regexes': '"/view_meter\?meter_key='
-        'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww"',
+        'regexes': [
+            r'"/view_meter\?meter_key='
+            r'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww"'],
         'status_code': "200"},
 
     {
@@ -230,18 +230,17 @@
         'status_code': 200},
 
     {
-        'name': "Check the details of the public meter is shown",
+        'name': "Check the details of the public meter are shown",
         'path': "/",
         'regexes': [
-            '&lt;tr&gt;\s*&lt;td&gt;Test&lt;/td&gt;\s*&lt;td&gt;\s*'
-            '&lt;a href="/view_meter\?meter_key='
-            'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww"&gt;'
-            'House&lt;/a&gt;\s*&lt;/td&gt;\s*&lt;td&gt;Gas&lt;/td&gt;\s*'
-            '&lt;td&gt;2011-02-15 18:40&lt;/td&gt;\s*&lt;td&gt;\s*'
-            '&lt;a href="/view_read\?read_key='
-            'ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA"'
-            '&gt;49\.0&lt;/a&gt;\s*&lt;/td&gt;\s*'
-            '&lt;td&gt;m&lt;sup&gt;3&lt;/sup&gt;\s*&lt;/td&gt;']},
+            '<tr>\s*<td>Test</td>\s*<td>\s*'
+            '<a href="/view_meter\?meter_key='
+            'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">'
+            'House</a>\s*</td>\s*<td>Gas</td>\s*'
+            '<td>2011-02-15 18:40</td>\s*<td>\s*'
+            '<a href="/view_read\?read_key='
+            'ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA">49\.0</a>\s*'
+            '</td>\s*<td>m<sup>3</sup>\s*</td>']},
 
     {
         'path': "/view_read?read_key="
@@ -250,19 +249,19 @@
 
     {
         'name': "Try admin stuff. Sign in as administrator",
-        'path': "/_ah/login?email=admin@example.com&amp;admin=True&"
-        "amp;continue=http://localhost:8080/&amp;action=Login",
-        'status_code': 200},
+        'path': "/_ah/login?email=admin@example.com&admin=True&"
+        "continue=http://localhost:8080/&action=Login",
+        'status_code': 302},
 
     {
         'name': "Try sending the reminders",
         'path': "/cron/reminders",
-        'status_code': "200"},
+        'status_code': 200},
 
     {
         'name': "And Sign out the administrator",
         'path': "/_ah/login?continue=http%3A//localhost%3A8080/&action=Logout",
-        'status_code': "200"},
+        'status_code': 302},
 
     {
         'name': "Log in with proposed email",
@@ -293,8 +292,8 @@
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
         'tries': {},
         'regexes': [
-            '&lt;option value="gas-m3" selected&gt;Gas - '
-            'm&amp;sup3;&lt;/option&gt;'],
+            '<option value="gas-m3" selected>Gas - '
+            'm&sup3;</option>'],
         'status_code': "200"},
 
     {
@@ -338,9 +337,9 @@
     {
         'path': "/view_meter?meter_key="
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
-        'regex': [
-            "&lt;th&gt;Date of last customer read&lt;/th&gt;",
-            "&lt;td&gt;\s*2011-07-21 18:40\s*&lt;/td&gt;"],
+        'regexes': [
+            "<th>Date of last customer read</th>",
+            "<td>\s*2011-07-21 18:40\s*</td>"],
         'status_code': 200},
 
     {

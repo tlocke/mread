@@ -1,8 +1,6 @@
+. ../venv/bin/activate
 cd ../app
-if ! pyflakes mread.py; then
-	exit
-fi
-if ! pep8 mread.py; then
+if ! flake8 mread.py; then
 	exit
 fi
 cd ..
