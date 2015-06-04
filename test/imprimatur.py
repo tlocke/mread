@@ -233,14 +233,15 @@
         'name': "Check the details of the public meter are shown",
         'path': "/",
         'regexes': [
-            '<tr>\s*<td>Test</td>\s*<td>\s*'
-            '<a href="/view_meter\?meter_key='
+            '<tr>\s*'
+            '<td>Test</td>\s*'
+            '<td>\s*<a href="/view_meter\?meter_key='
             'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">'
-            'House</a>\s*</td>\s*<td>Gas</td>\s*'
-            '<td>2011-02-15 18:40</td>\s*<td>\s*'
-            '<a href="/view_read\?read_key='
-            'ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA">49\.0</a>\s*'
-            '</td>\s*<td>m<sup>3</sup>\s*</td>']},
+            'House</a>\s*</td>\s*'
+            '<td>\s*<a\s*title="Gas meter at 2011-02-15 18:40"\s*'
+            'href="/view_read\?read_key='
+            'ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA">'
+            '49\.0\s*m<sup>3</sup>\s*</a>\s*</td>']},
 
     {
         'path': "/view_read?read_key="

@@ -50,10 +50,7 @@
       <tr>
         <th>Reader</th>
         <th>Meter</th>
-        <th>Utility</th>
-        <th>Time Of Read</th>
         <th>Reading</th>
-        <th>Units</th>
       </tr>
     </thead>
     <tbody>
@@ -63,15 +60,18 @@
           <td>
             <a href="/view_meter?meter_key={{ read.meter.key() }}">{{ read.meter.name }}</a>
           </td>
-          <td>{{ read.meter.utility_name() }}</td>
-          <td>{{ read.read_date.strftime("%Y-%m-%d %H:%M") }}</td>
           <td>
-            <a href="/view_read?read_key={{ read.key() }}">{{ read.value }}</a>
-          </td>
-          <td>
-            {%- for char in read.meter.units -%}
-              {%- if char == '3' -%}<sup>3</sup>{% else %}{{ char }}{% endif %}
-            {%- endfor %}
+            <a
+             title="{{read.meter.utility_name()}} meter at {{read.read_date.strftime("%Y-%m-%d %H:%M")}}"
+             href="/view_read?read_key={{ read.key() }}">{{ read.value }}
+              {% for char in read.meter.units -%}
+                {%- if char == '3' -%}
+                  <sup>3</sup>
+                {%- else -%}
+                  {{ char }}
+                {%- endif -%}
+              {%- endfor -%}
+            </a>
           </td>
         </tr>
       {% endfor %}
