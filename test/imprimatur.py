@@ -78,6 +78,12 @@
             "read_hour": "17",
             "read_minute": "48",
             "value": "41"},
+        'regexes': [
+            r'<p>\s*'
+            r'The <a '
+            r'href="/view_read\?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFk'
+            r'GICAgICAgMAIDA">reading</a> has been\s*'
+            r'successfully created.\s*</p>'],
         'status_code': 200},
 
     {
