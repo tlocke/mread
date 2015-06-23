@@ -43,38 +43,25 @@
       meter readings for your property.
     </p>
   {% endif %}
+  
+  <h4>Latest Public Reads</h4>
 
-  <table>
-    <caption>Latest Public Reads</caption>
-    <thead>
-      <tr>
-        <th>Reader</th>
-        <th>Meter</th>
-        <th>Reading</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for read in public_reads %}
-        <tr>
-          <td>{{ read.meter.reader.name }}</td>
-          <td>
-            <a href="/view_meter?meter_key={{ read.meter.key() }}">{{ read.meter.name }}</a>
-          </td>
-          <td>
-            <a
-             title="{{read.meter.utility_name()}} meter at {{read.read_date.strftime("%Y-%m-%d %H:%M")}}"
-             href="/view_read?read_key={{ read.key() }}">{{ read.value }}
-              {% for char in read.meter.units -%}
-                {%- if char == '3' -%}
-                  <sup>3</sup>
-                {%- else -%}
-                  {{ char }}
-                {%- endif -%}
-              {%- endfor -%}
-            </a>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <ul>
+    {% for read in public_reads %}
+      <li>
+        <a
+         title="{{read.meter.utility_name()}} {{read.meter.name}} meter at {{read.read_date.strftime("%Y-%m-%d %H:%M")}}"
+         href="/view_read?read_key={{ read.key() }}">{{ read.value }}
+          {% for char in read.meter.units -%}
+            {%- if char == '3' -%}
+              <sup>3</sup>
+            {%- else -%}
+              {{ char }}
+            {%- endif -%}
+          {%- endfor -%}
+        </a> by
+        {{ read.meter.reader.name }}
+      </li>
+    {% endfor %}
+  </ul>
 {% endblock %}

@@ -2,19 +2,18 @@
 
 {% block title %}
   MtrHub &gt; Meter: {{ read.meter.name }} &gt;
-  Read {{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}
+  Read {{ read.local_read_date().strftime("%Y-%m-%d %H:%M") }}
 {% endblock %}
 
 {% block nav %}
-  <a id="logo" href="/">MtrHub</a> &gt;
   <a href="/view_meter?meter_key={{ read.meter.key() }}">Meter: 
   {{ read.meter.name }}</a> &gt;
   <a href="/view_read?read_key={{ read.key() }}">Read
-  {{ read.local_read_date().strftime("%Y-%m-%d %H:%i") }}</a> &gt; Edit
+  {{ read.local_read_date().strftime("%Y-%m-%d %H:%M") }}</a> &gt; Edit
 {% endblock %}
 
 {% block content %} 
-  <form action="edit-read" method="post">
+  <form action="" method="post">
     <fieldset><legend>Update Read</legend>
       <input type="hidden" name="read_key" value="{{ read.key() }}">
       {{ input_date('read', request, read.local_read_date()) }}

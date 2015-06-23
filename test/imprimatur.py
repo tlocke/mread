@@ -94,7 +94,12 @@
         'regexes': [
             '<legend>Delete This Read</legend>\s*<input '
             'type="hidden" name="read_key" '
-            'value="ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA"']},
+            'value="ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAIDA"',
+
+            r'<title>\s*'
+            r'MtrHub &gt; Meter: House &gt;\s*'
+            r'Read 2011-02-13 17:48\s*'
+            r'</title>']},
     {
         'name': "Insert a read with a blank value.",
         'path': "/view_meter",
@@ -233,15 +238,13 @@
         'name': "Check the details of the public meter are shown",
         'path': "/",
         'regexes': [
-            '<tr>\s*'
-            '<td>Test</td>\s*'
-            '<td>\s*<a href="/view_meter\?meter_key='
-            'ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww">'
-            'House</a>\s*</td>\s*'
-            '<td>\s*<a\s*title="Gas meter at 2011-02-15 18:40"\s*'
-            'href="/view_read\?read_key='
-            'ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkGICAgICAgMAKDA">'
-            '49\.0\s*m<sup>3</sup>\s*</a>\s*</td>']},
+            r'<ul>\s*<li>\s*<a\s*'
+            r'title="Gas House meter at 2011-02-15 18:40"\s*'
+            r'href="/view_read\?read_key=ahBkZXZ-bWV0ZXJlYWQtaHJkchELEgRSZWFkG'
+            r'ICAgICAgMAKDA">49.0\s*'
+            r'm<sup>3</sup></a> by\s*'
+            r'Test\s*'
+            r'</li>']},
 
     {
         'path': "/view_read?read_key="
@@ -309,7 +312,7 @@
             "read_hour": "18",
             "read_minute": "40",
             "value": "49.0"},
-        'status_code': 200},
+        'status_code': 303},
 
     {
         'name': "Send a customer read. Set header data",

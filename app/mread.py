@@ -848,9 +848,8 @@ class EditRead(MReadHandler):
                 read_date = self.post_datetime("read")
                 value = self.post_float("value")
                 read.update(read_date, value)
-                fields = self.page_fields(current_reader, read)
-                fields['message'] = 'Read edited successfully.'
-                self.return_ok(fields)
+                self.add_flash("Read edited successfully.")
+                self.return_see_other("/view_read?read_key=" + str(read.key()))
         except HTTPBadRequest as e:
             self.return_bad_request(self.page_fields(current_reader, read, e))
 
