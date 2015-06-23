@@ -91,7 +91,7 @@
         <br/>
         <fieldset>
           <legend>Remind me to take a reading</legend>
-          <input type="hidden" name="meter_key" value="{{ meter.key }}">
+          <input type="hidden" name="meter_key" value="{{meter.key()}}">
           <label>Email Address</label>
           <input name="email_address" value="
             {%- if request.POST.email_address -%}
