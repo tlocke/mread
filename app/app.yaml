@@ -11,6 +11,9 @@ handlers:
 - url: /images
   static_dir: static/images
 
+- url: /fonts
+  static_dir: static/fonts
+
 - url: /cron/.*
   script: mread.app
   login: admin
