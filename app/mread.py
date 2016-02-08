@@ -1,7 +1,7 @@
 import jinja2
 import webapp2
 from google.appengine.api import mail
-from google.appengine.api import urlfetch
+from google.appengine.api import users
 import datetime
 import csv
 import dateutil.relativedelta
@@ -11,11 +11,9 @@ import string
 import random
 import markupsafe
 import urllib
-import json
 from webapp2_extras import sessions
 from webob.exc import HTTPBadRequest
 from models import Meter, Read, Reader, UTILITY_LIST, Configuration
-import logging
 
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader('templates'))
@@ -54,9 +52,12 @@ class MReadHandler(webapp2.RequestHandler):
         self.session.add_flash(message)
 
     def return_template(self, status, template_values):
-        user_email = self.find_current_email()
-        if user_email is not None:
-            template_values['user_email'] = user_email
+        user = users.get_current_user()
+        if user is None:
+            template_values['login_url'] = users.create_login_url('/welcome')
+        else:
+            template_values['logout_url'] = users.create_logout_url('/')
+            template_values['user'] = user
             reader = self.find_current_reader()
             if reader is not None:
                 template_values['current_reader'] = reader
@@ -123,7 +124,7 @@ class MReadHandler(webapp2.RequestHandler):
                     datetime.datetime(year, month, day, hour, minute))
                 return pytz.utc.normalize(
                     local_dt.astimezone(pytz.utc)).replace(tzinfo=None)
-        except ValueError, e:
+        except ValueError as e:
             raise HTTPBadRequest(str(e))
 
     def post_int(self, name):
@@ -137,11 +138,11 @@ class MReadHandler(webapp2.RequestHandler):
                 "The '" + name + "' field doesn't seem to be a number.")
 
     def find_current_reader(self):
-        user_email = self.find_current_email()
-        if user_email is None:
+        user = users.get_current_user()
+        if user is None:
             return None
         else:
-            return Reader.gql("where emails = :1", user_email).get()
+            return Reader.gql("where emails = :1", user.email()).get()
 
     def require_current_reader(self):
         reader = self.find_current_reader()
@@ -151,70 +152,17 @@ class MReadHandler(webapp2.RequestHandler):
         else:
             return reader
 
-    def find_current_email(self):
-        if 'user_email' in self.session:
-            return self.session['user_email']
-        else:
-            return None
-
-
-class SignIn(MReadHandler):
-    def post(self):
-        # The request has to have an assertion for us to verify
-        if 'assert' not in self.request.POST:
-            self.abort(400, detail="parameter 'assert' is required.")
-        server_name = self.request.server_name
-        if 'user_email' in self.request.POST and server_name == 'localhost':
-            user_email = self.post_str('user_email')
-            self.session['user_email'] = user_email
-            return "You are logged in."
-        else:
-            # Send the assertion to Mozilla's verifier service.
-            audience = self.request.scheme + "://" + server_name + ":" + \
-                str(self.request.server_port)
-            data = urllib.urlencode(
-                {
-                    'assertion': self.request.POST['assert'],
-                    'audience': audience})
-            resp = urlfetch.fetch(
-                'https://verifier.login.persona.org/verify',
-                payload=data,
-                method=urlfetch.POST,
-                headers={'Content-Type': 'application/x-www-form-urlencoded'})
-
-            # Did the verifier respond?
-            if resp.status_code == 200:
-                # Parse the response
-                verification_data = json.loads(resp.content)
-
-                # Check if the assertion was valid
-                if verification_data['status'] == 'okay':
-                    # Log the user in by setting a secure session cookie
-                    self.session['user_email'] = verification_data['email']
-                    return 'You are logged in'
-            logging.error("server replied " + resp.content)
-            # Oops, something failed. Abort.
-            self.abort(500)
-
-
-class SignOut(MReadHandler):
-    def get(self):
-        if 'user_email' in self.session:
-            del self.session['user_email']
-        return "Logged out."
-
 
 class AddReader(MReadHandler):
     def post(self):
-        user_email = self.find_current_email()
-        print("user email", user_email)
+        user = users.get_current_user()
         current_reader = self.find_current_reader()
         if current_reader is None:
             name = self.post_str('name')
             reader = Reader.all(keys_only=True).filter('name', name).get()
             if reader is not None:
                 raise HTTPBadRequest("I'm afraid that name's already taken.")
-            current_reader = Reader(emails=[user_email], name=name)
+            current_reader = Reader(emails=[user.email()], name=name)
             current_reader.put()
             self.add_flash("Account created successfully.")
             self.return_see_other('/')
@@ -314,8 +262,8 @@ class Home(MReadHandler):
 
 class Welcome(MReadHandler):
     def get(self):
-        user_email = self.find_current_email()
-        if user_email is None:
+        user = users.get_current_user()
+        if user is None:
             self.return_ok({})
         else:
             current_reader = self.find_current_reader()
@@ -323,7 +271,7 @@ class Welcome(MReadHandler):
                 fields = {}
                 proposed_readers = Reader.gql(
                     "where proposed_email = :1",
-                    user_email).fetch(10)
+                    user.email()).fetch(10)
                 if len(proposed_readers) > 0:
                     fields['proposed_readers'] = proposed_readers
                 self.return_ok(fields)
@@ -335,8 +283,8 @@ class Welcome(MReadHandler):
                 self.return_found(return_to)
 
     def post(self):
-        user_email = self.find_current_email()
-        if user_email is None:
+        user = users.get_current_user()
+        if user is None:
             self.return_unauthorized()
 
         if 'associate' in self.request.POST:
@@ -344,25 +292,26 @@ class Welcome(MReadHandler):
             if current_reader is None:
                 reader_key = self.post_str('reader_key')
                 reader = Reader.get_reader(reader_key)
-                if reader.proposed_email == user_email:
+                if reader.proposed_email == user.email():
                     reader.proposed_email = ''
-                    reader.emails.append(user_email)
+                    reader.emails.append(user.email())
                     reader.put()
-                    self.add_flash('The email address ' + user_email + """ has
-                            been successfully associated with this reader.""")
+                    self.add_flash(
+                        "The email address " + user.email() +
+                        " has been successfully associated with this reader.")
                     self.return_see_other(
                         '/view_reader?reader_key=' + str(reader.key()))
                 else:
                     self.return_ok(
                         messages=[
-                            "Can't associate " + user_email +
+                            "Can't associate " + user.email() +
                             " with the account " + reader.name + """ because
                             the email address you're signed in with doesn't
                             match the proposed email address."""])
             else:
                 self.return_bad_request(
                     messages=[
-                        "The email address " + user_email +
+                        "The email address " + user.email() +
                         """ is already associated with an account."""])
         else:
             self.return_see_other('/')
@@ -911,15 +860,13 @@ MtrHub.
         self.return_ok({})
 
 routes = [
-    (r'/', Home), (r'/xhr/sign_in', SignIn), (r'/view_meter', ViewMeter),
-    (r'/view_read', ViewRead), (r'/edit_read', EditRead),
-    (r'/send_read', SendRead), (r'/upload', Upload), (r'/chart', Chart),
-    (r'/meter_settings', MeterSettings), (r'/view_reader', ViewReader),
-    (r'/reader_settings', ReaderSettings), (r'/welcome', Welcome),
-    (r'/export_reads', ExportReads), (r'/add_meter', AddMeter),
-    (r'/cron', Cron), (r'/cron/reminders', Reminders),
-    (r'/xhr/sign_out', SignOut), (r'/add_reader', AddReader),
-]
+    (r'/', Home), (r'/view_meter', ViewMeter), (r'/view_read', ViewRead),
+    (r'/edit_read', EditRead), (r'/send_read', SendRead), (r'/upload', Upload),
+    (r'/chart', Chart), (r'/meter_settings', MeterSettings),
+    (r'/view_reader', ViewReader), (r'/reader_settings', ReaderSettings),
+    (r'/welcome', Welcome), (r'/export_reads', ExportReads),
+    (r'/add_meter', AddMeter), (r'/cron', Cron),
+    (r'/cron/reminders', Reminders), (r'/add_reader', AddReader)]
 
 template_names = dict(
     [(cls.__name__, rt[1:] + '.html') for rt, cls in routes if rt != '/'])

@@ -15,9 +15,9 @@
         <a href="/view_reader?reader_key={{ current_reader.key() }}"
         >{{ current_reader.name }}</a>
       {% endif %}
-      | <a href="{{ signout_url }}">Sign Out</a>
+      | <a href="{{logout_url}}">Sign Out</a>
     {% else %}
-      <a href="/sign_in">Sign In</a>
+      <a href="{{login_url}}">Sign In</a>
     {% endif %}
   </p>
 {% endblock %}

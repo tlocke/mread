@@ -6,20 +6,20 @@
 
 {% block login %}
   <p id="sign-in">
-    {% if user_email %}
-      <a id="signout" href="#">Sign Out</a>
+    {% if user %}
+      <a href="l{{logout_url}}">Sign Out</a>
     {% else %}
-      <a id="signin" href="#"><img  src="/images/plain_sign_in_red.png"></a>
+      <a href="{{login_url}}">Sign In</a>
     {% endif %}
   </p>
 {% endblock %}
 
 {% block content %}
-  {% if user_email %}
+  {% if user %}
     {% if proposed_readers %}
       <p>
         Welcome to MtrHub. You're signed in with the email address
-        {{ user_email }}. From here you can associate this email address
+        {{ user.email() }}. From here you can associate this email address
         with an existing account or you can create a new account.
       </p>
 		
@@ -66,7 +66,7 @@
     {% else %}
       <p>
         Welcome to MtrHub. You're signed in with the email address
-        {{ user_email }}. The next step is to create an account...
+        {{ user.email() }}. The next step is to create an account...
       </p>
       <br>
       <form action="/add_reader" method="post">

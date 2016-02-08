@@ -8,12 +8,9 @@
 
     {
         'name': "Try logging in.",
-        'path': "/xhr/sign_in",
-        'method': "post",
-        'data': {
-            "assert": "assrt",
-            "user_email": "test@example.com"},
-        'status_code': "200"},
+        'path': '/_ah/login?email=test@example.com&'
+        'action=Login&continue=http://localhost:8080/',
+        'status_code': 302},
 
     {
         'name': 'Create account',
@@ -53,7 +50,7 @@
         'path': "/view_meter?meter_key="
         "ahBkZXZ-bWV0ZXJlYWQtaHJkchILEgVNZXRlchiAgICAgICACww",
         'regexes': [
-            '<a id="signout" href="javascript:void\(0\)">Sign Out</a>',
+            r'">Sign Out</a>',
             '>Test<'],
         'status_code': 200},
 
@@ -197,7 +194,8 @@
 
     {
         'name': "Try and view the meter without being signed in",
-        'path': "/xhr/sign_out"},
+        'path': '/_ah/login?continue=http%3A//localhost%3A8080/&'
+        'action=logout'},
 
     {
         'path': "/view_meter?meter_key="
@@ -205,14 +203,10 @@
         'status_code': 401},
 
     {
-        'name': "Log in, change the meter to public and check it's there on "
-        "the homepage.",
-        'path': "/xhr/sign_in",
-        'method': "post",
-        'data': {
-            "assert": "assrt",
-            "user_email": "test@example.com"},
-        'status_code': 200},
+        'name': "Try logging in.",
+        'path': '/_ah/login?email=test@example.com&'
+        'action=Login&continue=http://localhost:8080/',
+        'status_code': 302},
 
     {
         'name': "Also change utility to gas, and reminder frequency to "
@@ -237,8 +231,9 @@
         'status_code': 200},
 
     {
-        'path': "/xhr/sign_out",
-        'status_code': 200},
+        'name': "Try and view the meter without being signed in",
+        'path': '/_ah/login?continue=http%3A//localhost%3A8080/&'
+        'action=logout'},
 
     {
         'name': "Check the details of the public meter are shown",
@@ -274,13 +269,11 @@
         'status_code': 302},
 
     {
-        'name': "Log in with proposed email",
-        'path': "/xhr/sign_in",
-        'method': "post",
-        'data': {
-            "assert": "assrt",
-            "user_email": "pink@example.com"},
-        'status_code': "200"},
+        'name': "Try logging in.",
+        'path': '/_ah/login?email=pink@example.com&'
+        'action=Login&continue=http://localhost:8080/',
+        'status_code': 302},
+
     {
         'path': "/welcome",
         'regexes': [

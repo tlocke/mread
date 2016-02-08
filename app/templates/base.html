@@ -4,7 +4,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" type="image/png" href="/images/icon.png">
     <link rel="stylesheet" type="text/css" href="/stylesheets/style.css">
-    <script src="https://login.persona.org/include.js"></script>
 
     {% macro input_date(prefix, request, initial, resolution='minute') -%}
       {%- if prefix != None -%}
@@ -81,99 +80,6 @@
     {% endblock %}
     <title>{% block title %}{% endblock %}</title>
     <style>{% block style %}{% endblock %}</style>
-    <script>
-      function signInXhrSentinel(xhr) {
-        return function() {
-          if (xhr.readyState == 4) {
-            if (xhr.status == 200){
-              window.location =
-              "/welcome?return_to=
-                {%- if template_name == '401.html' -%}
-                  /
-                {%- else -%}
-                  {{ request.path_qs|urlencode }}
-                {%- endif -%} 
-                ";
-            } else {
-              navigator.id.logout();
-              alert("XMLHttpRequest error: " + xhr.status + " " +
-                  xhr.responseText);
-              console.log("SI XMLHttpRequest error: " + xhr.status + " " +
-                  xhr.responseText);
-            }
-          }
-        }
-      }
-
-      function signOutXhrSentinel(xhr) {
-        return function() {
-          if (xhr.readyState == 4) {
-            if (xhr.status == 200){
-              window.location = "/";
-            } else {
-              navigator.id.logout();
-              alert("XMLHttpRequest error: " + xhr.status + " " +
-                  xhr.responseText);
-              console.log("SO XMLHttpRequest error: " + xhr.status + " " +
-                  xhr.responseText);
-            }
-          }
-        }
-      }
-
-      function verifyAssertion(assertion) {
-        var xhr = new XMLHttpRequest();
-        xhr.open("POST", "/xhr/sign_in", true);
-        var param = "assert="+assertion;
-        xhr.setRequestHeader("Content-type",
-            "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("Content-length", param.length);
-        xhr.setRequestHeader("Connection", "close");
-        xhr.send(param);
-
-        xhr.onreadystatechange = signInXhrSentinel(xhr);
-      }
-
-      function signInOnClick() {
-        navigator.id.request({siteName: "MtrHub"});
-      }
-
-      function signOutClick() {
-        navigator.id.logout();
-      }
-
-      var currentUser = {% if user_email -%}
-          "{{ user_email }}"
-        {%- else -%}
-          null
-        {%- endif -%};
-
-      function signoutUser() {
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "/xhr/sign_out", true);
-        xhr.send(null);
-        xhr.onreadystatechange = signOutXhrSentinel(xhr);
-      }
-      
-      navigator.id.watch( {
-        loggedInUser: currentUser,
-        onlogin: verifyAssertion,
-        onlogout: signoutUser } );
-
-      window.onload = function() {
-        var signInLink = document.getElementById('signin');
-        if (signInLink) {
-          signInLink.addEventListener('click', signInOnClick, false);
-        }
-             
-        var signoutLink = document.getElementById('signout');
-        if (signoutLink) {
-          signoutLink.addEventListener('click', signOutClick, false);
-        }
-      }
-
-    </script>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
   </head>
   <body>
     <p id="nav">
@@ -182,20 +88,17 @@
     </p>
     {% block login %}
       <p id="sign-in">
-        {% if user_email %}
+        {% if user %}
           {% if current_reader %}
             <a
               href="/view_reader?reader_key={{ current_reader.key() }}"
             >{{current_reader.name}}</a> |
-            <a id="signout" href="javascript:void(0)">Sign Out</a>
+          <a href="{{logout_url}}">Sign Out</a>
           {% else %}
             <a href="/welcome">Welcome</a>
           {% endif %}
         {% else %}
-          <a id="signin" href="#">
-            <img alt="Mozilla Persona Sign In"
-              src="/images/plain_sign_in_red.png">
-          </a>
+          <a href="{{login_url}}">Sign In</a>
         {% endif %}
       </p>
     {% endblock %}
